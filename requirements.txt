@@ -5,6 +5,9 @@ scikit-learn==1.9.1
 scipy==1.18.1
 matplotlib==3.11.2
 pyarrow==26.0.1
+igraph==1.0.0
+leidenalg==0.12.0
+networkx==3.7
 PyYAML==6.0.3
 joblib==1.6.0
 nbformat==5.11.1
