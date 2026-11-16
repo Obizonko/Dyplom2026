@@ -30,7 +30,7 @@ def load_inputs(raw_dir: Path | str, golden_path: Path | str) -> dict:
     if mpath is None:
         raise FileNotFoundError(f"не знайдено messages.parquet у {raw_dir}")
     gd = mpath.parent
-    msgs = pq.read_table(mpath, columns=["channel_id", "message_id", "text", "is_labeled_batch", "narrative_id"]).to_pandas()
+    msgs = pq.read_table(mpath, columns=["channel_id", "message_id", "text", "is_labeled_batch", "narrative_id", "date_utc"]).to_pandas()
     tg = pq.read_table(raw_dir / "telegram_messages.parquet", columns=["channel_id", "message_id", "text"]).to_pandas()
     fwd = pq.read_table(gd / "forward_edges.parquet", columns=["logical_src_channel_id", "logical_src_message_id",
                                                               "logical_dst_channel_id", "logical_dst_message_id"]).to_pandas()
@@ -46,8 +46,8 @@ def build_embedding_set(msgs: pd.DataFrame, tg: pd.DataFrame, gold: pd.DataFrame
 
     Текст: нормалізований із telegram_messages (як у золотих); якщо ключа там немає, нормалізуємо сирий текст із messages.
     Порожні після нормалізації тексти відкидаємо (їхні ембединги однакові і дали б фальшиві ребра), кількість повертаємо.
-    Колонки: key, channel_id, message_id, text, in_gold, in_labeled, in_sem, in_fwd, narrative_id."""
-    m = msgs[[c for c in ("channel_id", "message_id", "is_labeled_batch", "narrative_id") if c in msgs.columns]].assign(key=keys(msgs))
+    Колонки: key, channel_id, message_id, text, in_gold, in_labeled, in_sem, in_fwd, narrative_id, date_utc, text_hash."""
+    m = msgs[[c for c in ("channel_id", "message_id", "is_labeled_batch", "narrative_id", "date_utc") if c in msgs.columns]].assign(key=keys(msgs))
     t = pd.Series(tg["text"].to_numpy(), index=keys(tg).to_numpy()).loc[lambda x: ~x.index.duplicated()]
     g = gold.assign(key=keys(gold))
     sk = pd.concat([keys(sem, "src_channel_id", "src_message_id"), keys(sem, "dst_channel_id", "dst_message_id")])
@@ -76,11 +76,17 @@ def build_embedding_set(msgs: pd.DataFrame, tg: pd.DataFrame, gold: pd.DataFrame
     base["in_fwd"] = base["key"].isin(set(fk))
     nar = base["key"].map(mi["narrative_id"]) if "narrative_id" in mi else pd.Series(np.nan, index=base.index)
     base["narrative_id"] = nar
+    dt = pd.to_datetime(base["key"].map(mi["date_utc"]), utc=True, errors="coerce") if "date_utc" in mi else pd.Series(pd.NaT, index=base.index, dtype="datetime64[ns, UTC]")
+    gd = pd.to_datetime(g.drop_duplicates("key").set_index("key")["date_utc"], utc=True, errors="coerce") if "date_utc" in g else None
+    if gd is not None:  # золоті мають власну дату (збігається з корпусом, S2); беремо її, якщо в корпусі ключа немає
+        dt = dt.fillna(base["key"].map(gd))
+    base["date_utc"] = dt
     empty = base["text"].str.strip() == ""
     info = {"n_candidates": int(len(base)), "n_empty_dropped": int(empty.sum()), "n_text_from_raw_fallback": int(missing_tg.sum()),
             "n_gold": int(base["in_gold"].sum()), "n_labeled": int(base["in_labeled"].sum()), "n_sem_endpoints": int(base["in_sem"].sum()),
             "n_gold_empty": int((empty & base["in_gold"]).sum())}
     base = base[~empty].reset_index(drop=True)
+    base["text_hash"] = pd.util.hash_pandas_object(base["text"], index=False).astype("uint64").map(lambda v: f"{int(v):016x}")
     info["n_embedded"] = int(len(base))
     return base, info
 

@@ -41,6 +41,11 @@ def test_script_end_to_end(inp, tmp_path):
     r = pd.read_csv(out / "reachability.csv")
     assert set(r["layer"]) == {"forward", "semantic_orig", "semantic_own_0985", "semantic_own_0975", "forward+semantic_orig"}
     assert set(r["direction"]) == {"n_to_nn", "nn_to_n", "all"} and r["k"].max() == 4
+    li = pd.read_csv(out / "labeled_index.csv")
+    assert set(li.columns) == {"key", "channel_id", "message_id", "date_utc", "text_hash", "in_gold", "in_labeled", "weak_narrative"}
+    assert li["in_gold"].sum() == 6 and li["date_utc"].notna().all() and li["key"].is_unique
+    assert not (li["weak_narrative"] & ~li["in_labeled"]).any() and li["text_hash"].str.len().eq(16).all()
+    assert s["labeled_index"]["n_rows"] == len(li) and s["labeled_index"]["n_missing_date"] == 0
     ex = pd.read_csv(out / "exclude_labeled_keys_cos985.csv")
     assert set(ex.columns) >= {"key", "channel_id", "message_id", "max_cos", "n_gold_matched"}
     assert not ex["key"].isin(pd.read_csv(gold_csv).eval("channel_id * 10000000 + message_id")).any()  # золоті не потрапляють у список виключення

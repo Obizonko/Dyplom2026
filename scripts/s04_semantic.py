@@ -248,7 +248,15 @@ def main(argv=None) -> int:
                "layers_dropped_edges_unknown_group": dropped, "forward_vs_channel_flow": fwd_check, "n_orig_pairs_near_threshold": int(len(near)),
                "seconds": round(time.time() - t0)}
 
-    tables = {"reachability": reach, "gold_copies_summary": gsumm, "gold_copies_pairs": gpairs[gpairs["cos"] >= 0.95].sort_values(["gold_key", "cos"], ascending=[True, False]),
+    # вхід для S5 (спліти): розмічені слабкими мітками і золоті, без текстів
+    li = es.loc[es["in_labeled"] | es["in_gold"], ["key", "channel_id", "message_id", "date_utc", "narrative_id", "text_hash", "in_gold", "in_labeled"]].copy()
+    li["weak_narrative"] = li["in_labeled"] & li["narrative_id"].notna()
+    li["date_utc"] = li["date_utc"].dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+    li = li.drop(columns=["narrative_id"]).sort_values("key")
+    summary["labeled_index"] = {"n_rows": int(len(li)), "n_labeled": int(li["in_labeled"].sum()), "n_gold": int(li["in_gold"].sum()),
+                                "n_missing_date": int(li["date_utc"].isna().sum())}
+
+    tables = {"labeled_index": li, "reachability": reach, "gold_copies_summary": gsumm, "gold_copies_pairs": gpairs[gpairs["cos"] >= 0.95].sort_values(["gold_key", "cos"], ascending=[True, False]),
               "exclude_labeled_keys_cos985": excl.sort_values("key"), "threshold_pairs_sample": near, "repro_sample": sample}
 
     # ---- (7) UMAP
