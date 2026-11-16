@@ -1,0 +1,9 @@
+binary_label,is_labeled_batch,has_narrative_id,n
+(порожньо),False,False,364709
+(порожньо),True,False,46232
+(порожньо),True,True,18319
+False,False,False,606128
+False,True,False,5703
+False,True,True,11328
+True,False,False,142
+True,True,True,2

@@ -1,0 +1,19 @@
+{
+  "script": "scripts/s02_eda.py",
+  "timestamp_utc": "2026-11-16T09:10:40+00:00",
+  "git_commit": null,
+  "git_dirty": false,
+  "params": {
+    "raw_dir": "/content/drive/MyDrive/narratives-thesis/data/raw",
+    "lang_sample": 150000,
+    "seed": 42,
+    "golden": "/content/repo/external/TeleNarratives/labeling results/strong labeling/golden set (labeled).csv",
+    "seconds": 278
+  },
+  "versions": {
+    "python": "3.13.18",
+    "numpy": "2.4.6",
+    "pandas": "2.2.3",
+    "scikit-learn": "1.6.1"
+  }
+}

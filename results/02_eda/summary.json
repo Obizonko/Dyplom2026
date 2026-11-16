@@ -1,0 +1,95 @@
+{
+  "readme_counts": {
+    "channels": 111,
+    "messages": 1052563,
+    "forward_edges": 35697,
+    "semantic_edges": 52414,
+    "channel_flow_edges": 214,
+    "sem_channel_flow_edges": 1273
+  },
+  "integrity": {
+    "n_msgs": 1052563,
+    "n_tg": 1053674,
+    "n_channels_msgs": 98,
+    "n_channels_tg": 98,
+    "dup_keys_msgs": 0,
+    "dup_keys_tg": 0,
+    "keys_both": 1052560,
+    "keys_only_msgs": 3,
+    "keys_only_tg": 1114,
+    "unparsed_dates_msgs": 0,
+    "date_min_msgs": "2024-12-16 01:35:52+00:00",
+    "date_max_msgs": "2026-02-27 09:37:33+00:00",
+    "out_of_range_msgs": 0,
+    "unparsed_dates_tg": 0,
+    "date_min_tg": "2024-12-16 01:35:52+00:00",
+    "date_max_tg": "2026-02-27 09:37:33+00:00",
+    "out_of_range_tg": 0
+  },
+  "labels": {
+    "n_messages": 1052563,
+    "n_labeled": 81584,
+    "share_labeled": 0.0775098497667123,
+    "n_narrative_any": 29649,
+    "n_narrative_labeled": 29649,
+    "narrative_not_labeled": 0,
+    "narrative_share_of_labeled": 0.3634168464404785,
+    "sub_without_narrative": 0,
+    "confidence_missing_among_labeled": 0,
+    "sub_narrative_unknown_in_coding": 0,
+    "sub_to_narrative_match_share": 0.9876522384534935,
+    "max_sub_narrative_id": 383,
+    "sub_ids_not_in_coding": 0,
+    "narrative_to_meta_unique": true
+  },
+  "forwards": {
+    "n_forwarded": 95856,
+    "forwarded_share": 0.09097310932983067,
+    "n_unique_source_channels": 2640,
+    "n_forwarded_from_corpus_channel": 36247,
+    "n_forwarded_with_original_in_corpus": 35703,
+    "n_forward_edges_file": 35697,
+    "n_replies": 125056,
+    "reply_share": 0.1186856655853708
+  },
+  "gold": {
+    "n_gold": 412,
+    "n_gold_in_graph_messages": 412,
+    "n_gold_labeled_weak": 10,
+    "n_gold_present_not_labeled": 402,
+    "gold_narrative_share_present_not_labeled": 0.36318407960199006,
+    "n_gold_in_forward_edges": 6,
+    "n_gold_in_semantic_edges": 21,
+    "weak_vs_gold": {
+      "n": 10,
+      "tp": 2,
+      "fp": 0,
+      "fn": 0,
+      "tn": 8,
+      "accuracy": 1.0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_pos": 1.0,
+      "macro_f1": 1.0,
+      "mcc": 1.0
+    },
+    "meta_pairs_both_narrative": 2,
+    "meta_match_share": 1.0,
+    "gold_meta_names_not_in_coding": 0,
+    "gold_text_median_length": 265.0,
+    "n_corpus_copies_of_gold_text": 1636,
+    "n_gold_with_corpus_copy": 30,
+    "duplicates": {
+      "n_rows_in_duplicate_groups": 174929,
+      "share_all": 0.16619337749854404,
+      "share_labeled": 0.8594822514218474,
+      "n_unique_texts": 937630
+    }
+  },
+  "gold_narrative_share": 0.3592233009708738,
+  "edges": {
+    "forward_edges": 35697,
+    "semantic_edges": 52414,
+    "semantic_min_similarity": 0.975003
+  }
+}

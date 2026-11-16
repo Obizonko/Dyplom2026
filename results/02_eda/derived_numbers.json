@@ -1,0 +1,153 @@
+{
+  "labeled_share": 0.0775098497667123,
+  "narrative_share_of_corpus": 0.028168385170293846,
+  "narrative_share_of_labeled": 0.3634168464404785,
+  "confidence_groups": {
+    "0.0": 51904,
+    "0.3-0.65": 282,
+    "0.7-0.85": 4256,
+    "0.9": 20788,
+    "0.95": 335,
+    "1.0": 4019
+  },
+  "confidence_zero_share_of_non_narrative": 0.9994031000288822,
+  "confidence_non_narrative_nonzero": 31,
+  "confidence_0_9_share_of_narrative": 0.7010691760261729,
+  "confidence_ge_0_9_share_of_narrative": 0.8469425613005498,
+  "confidence_below_0_7_narrative": 282,
+  "binary_label": {
+    "narrative_empty": 18319,
+    "narrative_false": 11328,
+    "narrative_true": 2,
+    "unlabeled_true": 142,
+    "true_total": 144,
+    "false_total": 623159,
+    "narrative_empty_share": 0.6178623225066613
+  },
+  "forward_labeled": 70354,
+  "forward_labeled_share_of_labeled": 0.8623504608746813,
+  "outside_graph_labeled_share": 0.0007435998057966,
+  "mirror_pair": {
+    "labeled": 61815,
+    "labeled_share": 0.7576853304569523,
+    "narrative": 17187,
+    "narrative_share_of_all_narrative": 0.5796822827076799,
+    "narrative_share_inside": 0.2780393108468818,
+    "narrative_share_rest": 0.6303808993879306,
+    "max_flow_share_of_forward_edges": 0.863097739305824
+  },
+  "language": {
+    "weak_ru_share": 0.1688688958619337,
+    "gold_ru_share": 0.4830097087378641,
+    "weak_narrative_ru": 0.8451767438484431,
+    "weak_narrative_uk": 0.2655330570590057,
+    "gold_narrative_ru": 0.7085427135678392,
+    "gold_narrative_uk": 0.0328638497652582,
+    "weak_rates_at_gold_language_mix": 0.5455065853869135
+  },
+  "monthly": {
+    "early_months": "2024-12..2025-05",
+    "early_narrative_share": 0.4261607770630973,
+    "late_months": "2025-06..2026-02",
+    "late_narrative_share": 0.30762105458166406,
+    "labeled_share_by_month": {
+      "2024-12": 0.09669042634939982,
+      "2025-01": 0.0952632405200588,
+      "2025-02": 0.1069125060424004,
+      "2025-03": 0.09937040227980648,
+      "2025-04": 0.09027384859115084,
+      "2025-05": 0.08933562079747641,
+      "2025-06": 0.07041792646693106,
+      "2025-07": 0.06165615388625345,
+      "2025-08": 0.06864167567995356,
+      "2025-09": 0.0648024795410674,
+      "2025-10": 0.0592337674188208,
+      "2025-11": 0.062194524192983686,
+      "2025-12": 0.07086275801807738,
+      "2026-01": 0.07227685378170068,
+      "2026-02": 0.06454422295335785
+    }
+  },
+  "meta_weak_vs_gold": [
+    {
+      "level_1_id": 8,
+      "n_weak": 9782,
+      "share_weak": 0.3299268103477352,
+      "n_gold": 48,
+      "share_gold": 0.3243243243243243
+    },
+    {
+      "level_1_id": 9,
+      "n_weak": 5111,
+      "share_weak": 0.1723835542514081,
+      "n_gold": 38,
+      "share_gold": 0.2567567567567567
+    },
+    {
+      "level_1_id": 1,
+      "n_weak": 4214,
+      "share_weak": 0.1421295827852541,
+      "n_gold": 30,
+      "share_gold": 0.2027027027027027
+    },
+    {
+      "level_1_id": 2,
+      "n_weak": 3501,
+      "share_weak": 0.1180815541839522,
+      "n_gold": 18,
+      "share_gold": 0.1216216216216216
+    },
+    {
+      "level_1_id": 7,
+      "n_weak": 3021,
+      "share_weak": 0.1018921380147728,
+      "n_gold": 4,
+      "share_gold": 0.027027027027027
+    },
+    {
+      "level_1_id": 4,
+      "n_weak": 2588,
+      "share_weak": 0.0872879355121589,
+      "n_gold": 4,
+      "share_gold": 0.027027027027027
+    },
+    {
+      "level_1_id": 5,
+      "n_weak": 867,
+      "share_weak": 0.0292421329555802,
+      "n_gold": 4,
+      "share_gold": 0.027027027027027
+    },
+    {
+      "level_1_id": 6,
+      "n_weak": 533,
+      "share_weak": 0.0179769975378596,
+      "n_gold": 2,
+      "share_gold": 0.0135135135135135
+    },
+    {
+      "level_1_id": 3,
+      "n_weak": 32,
+      "share_weak": 0.0010792944112786,
+      "n_gold": 0,
+      "share_gold": 0.0
+    }
+  ],
+  "meta_sums": {
+    "weak": 29649,
+    "gold": 148
+  },
+  "gold": {
+    "graph_coverage_upper_bound": 0.06553398058252427,
+    "labeled_overlap_share": 0.024271844660194174,
+    "with_corpus_copy_share": 0.07281553398058252,
+    "narrative_in_unlabeled": 146,
+    "duplicates_share_all": 0.16619337749854404
+  },
+  "length": {
+    "median_narrative": 415.0,
+    "median_non_narrative": 312.0,
+    "median_all": 333.0,
+    "gold_median_raw_text": 288.0
+  }
+}

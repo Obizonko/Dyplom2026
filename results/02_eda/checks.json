@@ -1,0 +1,86 @@
+[
+  {
+    "hard": true,
+    "check": "Немає дублікатів (channel_id, message_id) у messages",
+    "passed": true,
+    "detail": "дублікатів 0"
+  },
+  {
+    "hard": true,
+    "check": "Немає дублікатів (channel_id, message_id) у telegram_messages",
+    "passed": true,
+    "detail": "дублікатів 0"
+  },
+  {
+    "hard": true,
+    "check": "Усі дати розпарсені",
+    "passed": true,
+    "detail": "непарсованих 0 і 0"
+  },
+  {
+    "hard": false,
+    "check": "Дати в межах 2024-12-16 .. 2026-02-27",
+    "passed": true,
+    "detail": "поза межами 0 (messages), 0 (telegram_messages)"
+  },
+  {
+    "hard": false,
+    "check": "Наративні повідомлення входять до розмічених",
+    "passed": true,
+    "detail": "поза розміченими 0"
+  },
+  {
+    "hard": false,
+    "check": "sub_narrative_id у мітках відомі файлу кодування",
+    "passed": true,
+    "detail": "невідомих 0"
+  },
+  {
+    "hard": false,
+    "check": "Кожен sub_narrative_id веде до того самого narrative_id, що й у мітці",
+    "passed": false,
+    "detail": "збіг 0.9877"
+  },
+  {
+    "hard": false,
+    "check": "Кількість повідомлень збігається з README",
+    "passed": true,
+    "detail": "1052563 проти 1052563"
+  },
+  {
+    "hard": false,
+    "check": "Кількість каналів у таблиці каналів збігається з README",
+    "passed": true,
+    "detail": "111 проти 111"
+  },
+  {
+    "hard": false,
+    "check": "Кількості ребер збігаються з README",
+    "passed": true,
+    "detail": "forward 35697, semantic 52414"
+  },
+  {
+    "hard": false,
+    "check": "Частка наративних серед розмічених близька до золотої (різниця до 0,10)",
+    "passed": true,
+    "detail": "слабкі 0.363, золота 0.359"
+  },
+  {
+    "hard": false,
+    "check": "Мітки каналів у таблиці збігаються з перерахунком за повідомленнями",
+    "passed": true,
+    "detail": "збігається 98 з 98 каналів"
+  },
+  {
+    "hard": false,
+    "check": "Усі золоті повідомлення знайдені в messages",
+    "passed": true,
+    "detail": "412 з 412"
+  },
+  {
+    "hard": true,
+    "check": "Золотий набір проходить validate_golden",
+    "passed": true,
+    "detail": "412 рядків, 148 наративних, 56 каналів, мітки узгоджені"
+  }
+]
