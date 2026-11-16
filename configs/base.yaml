@@ -1,0 +1,43 @@
+# Базова конфігурація проєкту. Усі шляхи відносно кореня репозиторію.
+seed: 42
+
+paths:
+  telenarratives: external/TeleNarratives
+  golden: "external/TeleNarratives/labeling results/strong labeling/golden set (labeled).csv"
+  shared: "external/TeleNarratives/labeling results/strong labeling/shared subset (labeled).csv"
+  iaa: "external/TeleNarratives/labeling results/strong labeling/inter_annotator_agreement_metrics.csv"
+  channels: external/TeleNarratives/config/channels.csv
+  narratives: external/TeleNarratives/config/narratives.csv
+  important_dates: "external/TeleNarratives/config/Important dates.csv"
+  gnn_results: "external/TeleNarratives/gnn results"
+  weak_eval: "external/TeleNarratives/labeling results/weak labeling/evaluation"
+
+columns:
+  no_narrative_label: "Не містить наративу"
+  binary: "Binary label"
+  general: "General label"
+  level1: "General label (level-1)"
+  text: text
+  channel: channel_id
+  message: message_id
+  date: date_utc
+  forwarded: is_forwarded
+  reviewers: ["Reviewer 1", "Reviewer 2", "Reviewer 3"]
+  # у файлі третій рецензент на рівні level-1 названий "Reviewer 2 (level-1).1"
+  reviewers_level1: ["Reviewer 1 (level-1)", "Reviewer 2 (level-1)", "Reviewer 2 (level-1).1"]
+
+# Очікувані значення з PLAN_vykonannya.md, розділ 2.2. Перевіряються тестами і аудитом.
+expected:
+  n_messages: 412
+  n_narrative: 148
+  n_shared: 103
+  n_channels_config: 98
+  n_sub_narratives: 380
+  n_channels_in_gold: 56
+
+eval:
+  bootstrap_n: 1000
+  cv_folds: 5
+  cv_repeats: 5
+  n_top_meta_narratives: 4   # багатокласова оцінка: none + 4 найбільші + «інше»
+  threshold: 0.5

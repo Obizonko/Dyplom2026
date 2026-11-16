@@ -1,0 +1,13 @@
+# Зовнішній репозиторій клонується окремо (див. README)
+external/
+
+# Дані з OSF і похідні великі файли
+data/raw/
+data/interim/
+data/processed/
+
+__pycache__/
+*.pyc
+.pytest_cache/
+.ipynb_checkpoints/
+.venv/
