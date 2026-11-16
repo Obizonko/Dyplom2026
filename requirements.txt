@@ -16,3 +16,4 @@ nbformat==5.11.1
 langid==1.1.6
 pytest==9.1.1
 # S4 (Colab): torch і sentence-transformers беруться з середовища Colab, їхні версії пишуться в results/04_semantic/run.json
+# S6 (Colab): torch і transformers беруться з середовища Colab, версії пишуться в results/06_text_models/colab_run.json і run.json
