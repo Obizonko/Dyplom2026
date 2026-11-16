@@ -1,6 +1,6 @@
 # Статус виконання плану
 
-Оновлено: 16.11.2026 (після S3). План: `PLAN_vykonannya.md` (Project «Dyplom»).
+Оновлено: 16.11.2026 (S4 підготовлено, чекає на запуск у Colab). План: `PLAN_vykonannya.md` (Project «Dyplom»).
 
 ## Чекліст етапів
 
@@ -11,7 +11,8 @@
 | S1. Завантаження з OSF | виконано: 6 файлів (5,71 ГБ) у Drive, tar.gz розпаковано, маніфест побудовано (Neo4j-дампи не профілювались), SHA-256 набору збігаються з MANIFEST самих архівів | `reports/01_data_manifest.md`, `colab/01_fetch_osf.ipynb`, `MyDrive/narratives-thesis/data_manifest.json` |
 | S2. EDA повних даних | виконано: 13 з 14 перевірок пройдено (4 жорсткі пройдено, одна м'яка не пройдена: 1,2% розбіжності `sub_narrative_id` і `narrative_id`), CSV і 6 рисунків у репозиторії, числа звірено скриптом | `reports/02_eda.md`, `results/02_eda/`, `src/narr/eda.py`, `scripts/s02_eda.py`, `scripts/s02_report_numbers.py`, `colab/02_eda.ipynb` |
 | S3. Мережа каналів | виконано: 9 з 9 перевірок (7 жорстких) пройдено, міжгрупові пересилання 0,346% (план: ~0,35%), Leiden стабільний (NMI min 1,0 для сирих ваг, 0,83 для log-ваг), вхід (214 ребер) перенесено з Drive вручну і звірено, рахунок у хмарній сесії без Colab | `reports/03_network.md`, `results/03_network/`, `src/narr/network.py`, `scripts/s03_network.py`, `scripts/s03_render_report.py`, `data_small/channel_flow_edges.csv` |
-| S4-S5, S6 (Colab), S7-S14 | не розпочато | |
+| S4. Семантичний шар | код, тести (64 пройдено, зокрема наскрізний прогін на синтетичних даних) і ноутбук готові, очікує запуску на GPU у Colab; результатів і висновків ще немає | `src/narr/semantic.py`, `src/narr/semantic_viz.py`, `scripts/s04_semantic.py`, `colab/04_semantic.ipynb` |
+| S5, S6 (Colab), S7-S14 | не розпочато | |
 
 ## Ключові знахідки
 
@@ -34,7 +35,7 @@
 
 ## Потрібно від користувача
 
-1. Зараз від вас нічого не потрібно. S3 зроблено в хмарній сесії. Наступний крок мій: підготувати ноутбук для S4 (семантичний шар, ембединги; потрібен Colab з GPU) і попросити його запустити.
+1. Запустити `colab/04_semantic.ipynb` у Colab: Runtime, Change runtime type, T4 GPU, потім Run all (близько 30-45 хв). Надіслати мені `MyDrive/narratives-thesis/results/04_semantic.zip`. Далі S4 дороблю я: розпакую, перегляну 50 пар на межі порога, напишу `reports/04_semantic.md`.
 2. Рішення для S5 (прийнято за вашою згодою на попередню пропозицію, скажіть, якщо це не так): основну оцінку H1-H3 робити в російськомовному зрізі, а гібрид порівнювати також з мовним правилом (деталі в `reports/06_conclusions.md`, пункт 5). Результати S2 це підсилюють: слабкі мітки сильно відрізняються від золотих за мовою (див. знахідку 8).
 3. GitHub: Claude GitHub App встановлено, гілка `main` запушена в `Obizonko/Dyplom2026`. Далі пушу після кожного етапу.
 4. За бажанням звільнити місце на Drive: `data/raw/extracted/telegram_narrative_graph_csv_dataset_20260311/messages.csv` (958 МБ) дублює parquet. Neo4j-архіви поки лишити.

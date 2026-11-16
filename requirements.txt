@@ -8,8 +8,11 @@ pyarrow==26.0.1
 igraph==1.0.0
 leidenalg==0.12.0
 networkx==3.7
+hnswlib==0.8.0
+umap-learn==0.6.0
 PyYAML==6.0.3
 joblib==1.6.0
 nbformat==5.11.1
 langid==1.1.6
 pytest==9.1.1
+# S4 (Colab): torch і sentence-transformers беруться з середовища Colab, їхні версії пишуться в results/04_semantic/run.json
