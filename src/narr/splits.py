@@ -149,3 +149,57 @@ def size_row(protocol: str, fold: int | None, train: pd.DataFrame, test: pd.Data
     return {"protocol": protocol, "fold": fold, "n_train": int(len(train)), "n_train_narrative": int(train["weak_narrative"].sum()),
             "n_train_channels": int(train["channel_id"].nunique()), "n_test": int(len(test)), "n_test_narrative": int(test["y"].sum()),
             "n_test_channels": int(test["channel_id"].nunique())}
+
+
+# ---------------------------------------------------------------- розмітка «явний / неявний» (визначення а)
+EXPL_VALUES = ("explicit", "implicit", "unclear")
+REASON_CODES = ("direct", "framing", "irony", "quote", "context", "fragment", "mixed", "unrelated")
+MIN_IMPLICIT = 30
+
+
+def implicit_manual_summary(lab: pd.DataFrame, min_implicit: int = MIN_IMPLICIT) -> dict:
+    """Підсумок ручної розмітки. Коментар має вигляд `код` або `код;borderline`. Чутливість: вузьке (без borderline) і широке (borderline явних вважаємо неявними) визначення."""
+    ex = lab["explicitness"].fillna("").astype(str).str.strip()
+    bad = sorted(set(ex) - set(EXPL_VALUES))
+    code = lab["comment"].fillna("").astype(str).str.split(";").str[0].str.strip()
+    border = lab["comment"].fillna("").astype(str).str.contains("borderline")
+    bad_code = sorted(set(code) - set(REASON_CODES))
+    ru = lab["lang"].eq("ru")
+
+    def cnt(mask):
+        return {"all": int(mask.sum()), "ru": int((mask & ru).sum()), "uk": int((mask & lab["lang"].eq("uk")).sum())}
+
+    imp, exp, unc = ex.eq("implicit"), ex.eq("explicit"), ex.eq("unclear")
+    narrow, wide = imp & ~border, imp | (exp & border)
+    out = {"n_rows": int(len(lab)), "n_filled": int(ex.ne("").sum()), "bad_values": bad, "bad_codes": bad_code,
+           "explicit": cnt(exp), "implicit": cnt(imp), "unclear": cnt(unc),
+           "implicit_narrow": cnt(narrow), "implicit_wide": cnt(wide), "n_borderline": int(border.sum()),
+           "by_code": {k: int((code == k).sum()) for k in REASON_CODES if (code == k).any()},
+           "min_implicit": int(min_implicit),
+           "enough_ru": {"base": bool((imp & ru).sum() >= min_implicit), "narrow": bool((narrow & ru).sum() >= min_implicit),
+                         "wide": bool((wide & ru).sum() >= min_implicit)}}
+    return out
+
+
+def spotcheck_sample(lab: pd.DataFrame, n_per_class: int = 10, seed: int = 42) -> pd.DataFrame:
+    """Сліпа вибірка для перевірки користувачем: n_per_class явних і n_per_class неявних (за розміткою Claude), без самої розмітки."""
+    rng = np.random.default_rng(seed)
+    pick = []
+    for v in ("explicit", "implicit"):
+        ids = lab.loc[lab["explicitness"] == v, "n"].to_numpy()
+        pick += list(rng.choice(ids, size=min(n_per_class, len(ids)), replace=False))
+    sub = lab[lab["n"].isin(pick)].sample(frac=1.0, random_state=seed)
+    return sub[["n", "narrative_label", "lang", "text"]].assign(explicitness_user="").reset_index(drop=True)
+
+
+def spotcheck_agreement(lab: pd.DataFrame, user: pd.DataFrame) -> dict | None:
+    """Узгодженість розмітки Claude з перевіркою користувача на сліпій вибірці. None, якщо відповідей ще немає."""
+    u = user.copy()
+    u["explicitness_user"] = u["explicitness_user"].fillna("").astype(str).str.strip()
+    u = u[u["explicitness_user"].ne("")]
+    if u.empty:
+        return None
+    m = u.merge(lab[["n", "explicitness"]], on="n")
+    both = m[m["explicitness_user"].isin(("explicit", "implicit")) & m["explicitness"].isin(("explicit", "implicit"))]
+    return {"n_checked": int(len(m)), "n_binary": int(len(both)), "n_agree": int((both["explicitness_user"] == both["explicitness"]).sum()),
+            "n_user_unclear": int((m["explicitness_user"] == "unclear").sum())}

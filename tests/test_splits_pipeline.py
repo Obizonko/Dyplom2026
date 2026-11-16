@@ -83,7 +83,13 @@ def test_template_not_overwritten_when_answers_exist(tmp_path):
     t.to_csv(out / "implicit_labeling.csv", index=False)
     m.main(args)
     assert pd.read_csv(out / "implicit_labeling.csv").loc[0, "explicitness"] == "implicit"
+    assert not (out / "implicit_labeling.new.csv").exists()          # ті самі ключі: нічого не пишемо поруч
+    t = pd.read_csv(out / "implicit_labeling.csv", dtype=str)
+    t.loc[1, "message_id"] = "999999999"                                 # інший набір ключів: новий шаблон лише поруч
+    t.to_csv(out / "implicit_labeling.csv", index=False)
+    m.main(args)
     assert (out / "implicit_labeling.new.csv").exists()
+    assert pd.read_csv(out / "implicit_labeling.csv").loc[0, "explicitness"] == "implicit"
 
 
 def test_leak_detected_if_copy_not_excluded(tmp_path):

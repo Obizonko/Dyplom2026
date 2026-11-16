@@ -33,29 +33,32 @@ def fig_repro(sample: pd.DataFrame, stats: dict, out: Path) -> None:
     d = (sample["score"] - sample["cos"]).to_numpy()
     ax[1].hist(d, bins=60, color="#8aa9d6")
     ax[1].axvline(0, color=C_POS, lw=1)
-    ax[1].set(xlabel="score - cos", ylabel="пар", title=f"Різниця (спірмен {stats['spearman']:.3f}, середній модуль {stats['mean_abs_diff_direct']:.3f})")
+    ax[1].set(xlabel="score - cos", ylabel="пар", title=("Різниця (спірмен " + f"{stats['spearman']:.3f}".replace(".", ",") + ", середній модуль " + f"{stats['mean_abs_diff_direct']:.3f}".replace(".", ",") + ")"))
     fig.tight_layout()
     fig.savefig(out)
     plt.close(fig)
 
 
 def fig_reach(reach: pd.DataFrame, out: Path) -> None:
-    """reach: layer, direction (n_to_nn, nn_to_n, all), k, share, null_mean (може бути NaN)."""
+    """reach: layer, direction (n_to_nn, nn_to_n, all), k, share, null_mean (може бути NaN). Вісь Y логарифмічна: справжні частки
+    на порядки менші за нульову модель, у лінійному масштабі шари не розрізнити."""
     _style()
     dirs = [("n_to_nn", "від каналів n до груп nn"), ("nn_to_n", "від каналів nn до груп n"), ("all", "усі повідомлення шару")]
-    fig, axs = plt.subplots(1, 3, figsize=(14, 4.2), sharey=True)
+    fig, axs = plt.subplots(1, 3, figsize=(14, 4.8), sharey=True)
+    handles = {}
     for ax, (d, title) in zip(axs, dirs):
         for layer, g in reach[reach["direction"] == d].groupby("layer"):
             g = g.sort_values("k")
             col = LAYER_COLORS.get(layer, "#7f8c8d")
-            ax.plot(g["k"], g["share"], marker="o", color=col, label=LAYER_LABELS.get(layer, layer))
+            (h,) = ax.plot(g["k"], g["share"].where(g["share"] > 0), marker="o", color=col, label=LAYER_LABELS.get(layer, layer))
+            handles[layer] = h
             if g["null_mean"].notna().any():
                 ax.plot(g["k"], g["null_mean"], ls=":", color=col, alpha=0.7)
-        ax.set(xlabel="кроків", title=title, xticks=sorted(reach["k"].unique()), ylim=(0, 1))
-    axs[0].set_ylabel("частка повідомлень, що досягають іншої групи")
-    axs[0].legend(frameon=False, fontsize=7, loc="lower right")
+        ax.set(xlabel="кроків", title=title, xticks=sorted(reach["k"].unique()), yscale="log", ylim=(1e-3, 1.2))
+    axs[0].set_ylabel("частка, що досягає іншої групи (лог. вісь)")
+    fig.legend(handles=list(handles.values()), loc="lower center", bbox_to_anchor=(0.5, 0.06), ncol=3, frameon=False, fontsize=8)
     fig.text(0.5, 0.005, "Пунктир: нульова модель (групи випадково розкидані по каналах)", ha="center", fontsize=8)
-    fig.tight_layout(rect=(0, 0.07, 1, 1))
+    fig.tight_layout(rect=(0, 0.17, 1, 1))
     fig.savefig(out)
     plt.close(fig)
 

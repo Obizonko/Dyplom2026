@@ -39,7 +39,7 @@ def implicit_auto(gold: pd.DataFrame, pred_path: Path, seed: int) -> pd.DataFram
 
 
 def labeling_template(g_raw: pd.DataFrame, gold: pd.DataFrame, out_csv: Path, seed: int) -> str:
-    """Шаблон для ручної розмітки 148 наративних золотих. Якщо файл уже містить відповіді користувача, не перезаписуємо."""
+    """Шаблон розмітки 148 наративних золотих. Якщо файл уже містить відповіді, не перезаписуємо (різні набори ключів дають .new.csv)."""
     pos = g_raw.merge(gold[["channel_id", "message_id", "y", "lang"]], on=["channel_id", "message_id"])
     pos = pos[pos["y"] == 1].sample(frac=1.0, random_state=seed).reset_index(drop=True)  # випадковий порядок
     tpl = pd.DataFrame({"n": np.arange(1, len(pos) + 1), "channel_id": pos["channel_id"], "message_id": pos["message_id"],
@@ -49,26 +49,28 @@ def labeling_template(g_raw: pd.DataFrame, gold: pd.DataFrame, out_csv: Path, se
     if out_csv.exists():
         old = pd.read_csv(out_csv)
         if old.get("explicitness", pd.Series(dtype=object)).fillna("").astype(str).str.strip().ne("").any():
+            same = set(zip(old["channel_id"], old["message_id"])) == set(zip(tpl["channel_id"], tpl["message_id"]))
+            if same:
+                return "labeled"
             tpl.to_csv(out_csv.with_name(out_csv.stem + ".new.csv"), index=False, encoding="utf-8-sig")
-            return "exists_with_answers"
+            return "exists_with_answers_keys_differ"
     tpl.to_csv(out_csv, index=False, encoding="utf-8-sig")  # utf-8-sig, щоб Excel правильно показав кирилицю
     return "written"
 
 
 LABEL_README = """# Розмітка «явний / неявний» наратив
 
-Файл `implicit_labeling.csv`: 148 повідомлень, які золота розмітка визнала наративними, у випадковому порядку.
-У колонці `explicitness` для кожного рядка запишіть одне зі значень (англійською, малими літерами):
+Файл `implicit_labeling.csv`: 148 повідомлень, які золота розмітка визнала наративними, у випадковому порядку (seed 42).
 
-- `explicit`: з самого тексту повідомлення без додаткових знань зрозуміло, яке твердження наративу воно висловлює
-  (наратив названо або сказано прямо, у тому числі прямою цитатою чи заголовком);
-- `implicit`: наратив лише натякається (іронія, риторичне питання, добірка фактів, що підводить до висновку, посилання на контекст,
-  який треба знати), або без попередніх подій чи інших повідомлень висновок не зрозумілий;
-- `unclear`: не можете вирішити. Такі рядки в аналізі H1 не враховуються, їх кількість буде вказана у звіті.
+Розмітку виконала Claude (LLM) за рубрикатором `implicit_rubric.md` на прохання користувача, сліпо до прогнозів моделей.
+У колонці `explicitness` одне зі значень: `explicit`, `implicit`, `unclear`. У колонці `comment` код причини
+(`direct`, `framing`, `irony`, `quote`, `context`, `fragment`, `mixed`, `unrelated`), а для сумнівних випадків ще й `;borderline`.
+`unclear` в аналізі H1 не враховуються, їх кількість наведено у звіті.
 
-Колонка `narrative_label` показує, який наратив поставили анотатори. Оцінюйте, чи видно його з тексту, а не чи згодні ви з розміткою.
-Поле `comment` необов'язкове. Не міняйте колонки `channel_id`, `message_id`, `n`.
-Орієнтовно 1 година. Збережіть як CSV (UTF-8) і надішліть файл назад.
+Перевірка користувачем (близько 15 хвилин): файл `implicit_spotcheck.csv` містить 20 рядків (10 явних і 10 неявних за розміткою Claude)
+без самої розмітки. У колонці `explicitness_user` поставте `explicit`, `implicit` або `unclear` і поверніть файл.
+Скрипт порахує збіг, і його буде додано до звіту як зовнішню перевірку розмітки.
+Текст нормалізований (малі літери, без розділових знаків), бо інших у наборі немає.
 """
 
 
@@ -124,11 +126,29 @@ def main(argv=None) -> int:
                                       "n_implicit_ru": int((pos["implicit_auto"] & (pos["lang"] == "ru")).sum()),
                                       "n_implicit_uk": int((pos["implicit_auto"] & (pos["lang"] == "uk")).sum()),
                                       "n_narrative_ru": int((pos["lang"] == "ru").sum()), "n_narrative_uk": int((pos["lang"] == "uk").sum())}
+    ab_table = None
+    spot_path = out / "implicit_spotcheck.csv"
+    if tpl_status == "labeled":
+        lab = pd.read_csv(out / "implicit_labeling.csv")
+        summary["implicit_manual_a"] = sp.implicit_manual_summary(lab)
+        keep = spot_path.exists() and pd.read_csv(spot_path)["explicitness_user"].fillna("").astype(str).str.strip().ne("").any()
+        if not keep:
+            sp.spotcheck_sample(lab, seed=seed).to_csv(spot_path, index=False, encoding="utf-8-sig")
+        agree = sp.spotcheck_agreement(lab, pd.read_csv(spot_path))
+        if agree is not None:
+            summary["implicit_spotcheck"] = agree
+        if imp is not None:
+            mm = lab.merge(imp[["channel_id", "message_id", "implicit_auto"]], on=["channel_id", "message_id"])
+            ab = pd.crosstab(mm["explicitness"], mm["implicit_auto"].map({True: "b_implicit", False: "b_not_implicit"})).reset_index()
+            summary["implicit_a_vs_b"] = {r["explicitness"]: {k: int(r[k]) for k in ab.columns if k != "explicitness"} for _, r in ab.iterrows()}
+            ab_table = ab
     tables = {"gold_membership": gold.assign(date_utc=gold["date_utc"].dt.strftime("%Y-%m-%dT%H:%M:%SZ"))[
         ["key", "channel_id", "message_id", "date_utc", "y", "lang", "fold", "in_p2_test"]],
         "gold_channel_folds": folds, "p3_fold_sizes": fold_sizes, "p2_test_by_language": p2_lang}
     if imp is not None:
         tables["implicit_auto_b"] = imp
+    if ab_table is not None:
+        tables["implicit_a_vs_b"] = ab_table
     checks = [
         {"hard": True, "check": "Золотих 412, наративних 148, каналів 56", "passed": bool(len(gold) == 412 and gold["y"].sum() == 148 and gold["channel_id"].nunique() == 56),
          "detail": f"{len(gold)} / {int(gold['y'].sum())} / {gold['channel_id'].nunique()}"},
@@ -144,8 +164,17 @@ def main(argv=None) -> int:
          "detail": "; ".join(f"{c}: {fold_sizes[c].min()} до {fold_sizes[c].max()}" for c in ("n_test", "n_narrative", "n_ru"))},
     ]
 
+    if "implicit_manual_a" in summary:
+        m = summary["implicit_manual_a"]
+        checks.append({"hard": True, "check": "Розмітку (а) заповнено для всіх 148 рядків, значення й коди причин допустимі",
+                       "passed": bool(m["n_rows"] == 148 and m["n_filled"] == 148 and not m["bad_values"] and not m["bad_codes"]),
+                       "detail": f"заповнено {m['n_filled']} з {m['n_rows']}; невалідні значення {m['bad_values']}, коди {m['bad_codes']}"})
+        checks.append({"hard": False, "check": f"Російськомовних неявних не менше {m['min_implicit']} (умова H1)", "passed": bool(m["enough_ru"]["base"]),
+                       "detail": f"базово {m['implicit']['ru']}, вузьке {m['implicit_narrow']['ru']}, широке {m['implicit_wide']['ru']}"})
+
     # ---- навчальна частина (потрібен S4)
-    need = {"index": s04 / "labeled_index.csv", "exclude": s04 / "exclude_labeled_keys_cos985.csv", "pairs": s04 / "gold_copies_pairs.csv"}
+    idx_path = s04 / "labeled_index.csv" if (s04 / "labeled_index.csv").exists() else s04 / "labeled_index.csv.gz"
+    need = {"index": idx_path, "exclude": s04 / "exclude_labeled_keys_cos985.csv", "pairs": s04 / "gold_copies_pairs.csv"}
     have = all(p.exists() for p in need.values())
     sizes = []
     if have:
