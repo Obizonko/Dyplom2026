@@ -1,0 +1,19 @@
+{
+  "script": "scripts/s05_splits.py",
+  "timestamp_utc": "2026-11-16T10:30:25+00:00",
+  "git_commit": "d6c4f7f19984fbb00d940e1ddf891ab94f2631c0",
+  "git_dirty": false,
+  "params": {
+    "cutoff": "2025-09-01",
+    "folds": 5,
+    "seed": 42,
+    "s04": "/home/claude/dyplom2026/results/04_semantic",
+    "seconds": 2
+  },
+  "versions": {
+    "python": "3.13.18",
+    "numpy": "2.5.3",
+    "pandas": "3.0.5",
+    "scikit-learn": "1.9.1"
+  }
+}

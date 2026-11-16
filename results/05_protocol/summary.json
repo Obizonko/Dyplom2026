@@ -1,0 +1,28 @@
+{
+  "gold": {
+    "n": 412,
+    "n_narrative": 148,
+    "n_channels": 56,
+    "n_p2_test": 116,
+    "n_p2_test_narrative": 37,
+    "n_p2_test_channels": 30,
+    "cutoff": "2025-09-01",
+    "p3_folds": 5
+  },
+  "gold_channels": {
+    "n_without_labeled": 0,
+    "min_n_labeled": 3,
+    "median_n_labeled": 238.5,
+    "n_in_table": 56
+  },
+  "implicit_template": "written",
+  "implicit_auto_b": {
+    "n_narrative": 148,
+    "n_implicit": 20,
+    "n_implicit_ru": 13,
+    "n_implicit_uk": 7,
+    "n_narrative_ru": 141,
+    "n_narrative_uk": 7
+  },
+  "train_side": "pending_S4: index, exclude, pairs"
+}

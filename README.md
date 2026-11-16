@@ -23,8 +23,8 @@ GPU-етапи (завантаження з OSF, ембеддинги, XLM-R, GN
 ## Структура
 
 ```text
-configs/        base.yaml (шляхи, seed, пороги); prereg.md з'явиться на етапі S5
-src/narr/       io, audit, evaluate, baselines, report, viz (інші модулі за планом додаються по етапах)
+configs/        base.yaml (шляхи, seed, пороги); prereg.md (преєстрація, версія 1, чернетка)
+src/narr/       io, audit, eda, network, semantic, splits, evaluate, baselines, report, viz (інші модулі за планом додаються по етапах)
 scripts/        по одному CLI на етап: s00_audit.py, s06_tfidf.py, ...
 colab/          ноутбуки для GPU-етапів (01_fetch_osf.ipynb)
 tests/          pytest: схеми, метрики, бейзлайни
