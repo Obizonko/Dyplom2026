@@ -13,6 +13,7 @@ def gold_facts(df: pd.DataFrame, cfg: dict) -> dict:
     col = cfg["columns"]
     month = df[col["date"]].dt.strftime("%Y-%m")
     per_month = month.value_counts().sort_index()
+    inner = per_month.iloc[1:-1]  # перший і останній місяць вибірки неповні (період 17.12.2024 - 11.12.2025)
     per_channel = df[col["channel"]].value_counts()
     length = df[col["text"]].str.len()
     return {
@@ -24,9 +25,10 @@ def gold_facts(df: pd.DataFrame, cfg: dict) -> dict:
         "date_min": str(df[col["date"]].min().date()),
         "date_max": str(df[col["date"]].max().date()),
         "n_months": int(len(per_month)),
-        "per_month_min": int(per_month.min()),
-        "per_month_median": float(per_month.median()),
-        "per_month_max": int(per_month.max()),
+        "per_month_full_min": int(inner.min()),
+        "per_month_full_median": float(inner.median()),
+        "per_month_full_max": int(inner.max()),
+        "per_month_first_last": [int(per_month.iloc[0]), int(per_month.iloc[-1])],
         "text_len_median": float(length.median()),
         "text_len_mean": float(length.mean()),
         "text_len_p90": float(length.quantile(0.9)),
@@ -113,13 +115,13 @@ MODEL_NAMES = {
 
 
 def _cm_metrics(tn, fp, fn, tp) -> dict:
-    n0, n1, n = tn + fp, fn + tp, tn + fp + fn + tp
+    n1, n = fn + tp, tn + fp + fn + tp
     f1_0 = 2 * tn / (2 * tn + fp + fn) if (2 * tn + fp + fn) else 0.0
     f1_1 = 2 * tp / (2 * tp + fp + fn) if (2 * tp + fp + fn) else 0.0
     den = np.sqrt((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn))
     mcc = (tp * tn - fp * fn) / den if den else 0.0
     return {"n": int(n), "share_pos": n1 / n, "f1_neg": f1_0, "f1_pos": f1_1,
-            "macro_f1": (f1_0 + f1_1) / 2, "weighted_f1": (n0 * f1_0 + n1 * f1_1) / n, "mcc": mcc}
+            "macro_f1": (f1_0 + f1_1) / 2, "accuracy": (tn + tp) / n, "mcc": mcc}
 
 
 def original_models(gnn_dir: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -138,7 +140,7 @@ def original_models(gnn_dir: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
             "model": MODEL_NAMES.get(d.name, d.name), "dir": d.name,
             "n_train": sizes["train"], "n_val": sizes["val"], "n_test": sizes["test"],
             "n_total": sum(sizes.values()),
-            "general_f1_reported": float(t.general_f1), "weighted_f1_recomputed": rec["weighted_f1"],
+            "general_f1_reported": float(t.general_f1), "accuracy_recomputed": rec["accuracy"],
             "macro_f1_recomputed": rec["macro_f1"], "f1_pos": rec["f1_pos"],
             "mcc_reported": float(t.mcc), "mcc_recomputed": rec["mcc"],
             "pr_auc": float(t.pr_auc), "roc_auc": float(t.roc_auc), "share_pos_test": rec["share_pos"],

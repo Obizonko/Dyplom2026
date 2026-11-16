@@ -34,7 +34,8 @@ def fig_gold_overview(monthly: pd.DataFrame, meta: pd.DataFrame, out: Path) -> N
     ax[0].set_xticks(x, monthly["month"], rotation=60, ha="right")
     ax[0].set_ylabel("повідомлень")
     ax[0].set_title("Золота вибірка за місяцями")
-    ax[0].legend(frameon=False)
+    ax[0].set_ylim(0, float((monthly["n_other"] + monthly["n_narrative"]).max()) * 1.25)
+    ax[0].legend(frameon=False, ncol=2, loc="upper left")
     m = meta.sort_values("n")
     ax[1].barh([wrap(s) for s in m["label"]], m["n"], color=C_ACC)
     for i, v in enumerate(m["n"]):

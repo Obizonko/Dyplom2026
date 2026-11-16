@@ -93,7 +93,7 @@ def write_run_json(out_dir: Path | str, script: str, params: dict) -> Path:
         "script": script,
         "timestamp_utc": dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds"),
         "git_commit": _git("rev-parse", "HEAD"),
-        "git_dirty": bool(_git("status", "--porcelain")),
+        "git_dirty": bool(_git("status", "--porcelain", "--untracked-files=no", "--", "src", "scripts", "configs")),  # зміни коду відносно коміту
         "params": params,
         "versions": {
             "python": platform.python_version(),

@@ -65,9 +65,9 @@ def main() -> None:
         (f"піднаративів у config = {exp['n_sub_narratives']}", len(narratives) == exp["n_sub_narratives"], str(len(narratives))),
         ("повторно пораховані κ Фляйса збігаються з файлом (|Δ| < 0,001)", bool((iaa["abs_diff"] < 1e-3).all()),
          "макс. |Δ| = " + fmt(float(iaa["abs_diff"].max()), 5)),
-        ("general_f1 у метриках оригіналу = зважений F1 (|Δ| < 0,002)",
-         bool(((models["general_f1_reported"] - models["weighted_f1_recomputed"]).abs() < 2e-3).all()),
-         "макс. |Δ| = " + fmt(float((models["general_f1_reported"] - models["weighted_f1_recomputed"]).abs().max()), 5)),
+        ("general_f1 у метриках оригіналу = accuracy за матрицею помилок (|Δ| < 0,00001)",
+         bool(((models["general_f1_reported"] - models["accuracy_recomputed"]).abs() < 1e-5).all()),
+         "макс. |Δ| = " + fmt(float((models["general_f1_reported"] - models["accuracy_recomputed"]).abs().max()), 6)),
         ("MCC з файлу збігається з перерахунком за матрицею помилок (|Δ| < 0,001)",
          bool(((models["mcc_reported"] - models["mcc_recomputed"]).abs() < 1e-3).all()),
          "макс. |Δ| = " + fmt(float((models["mcc_reported"] - models["mcc_recomputed"]).abs().max()), 5)),
@@ -85,8 +85,9 @@ def main() -> None:
         ("Каналів у вибірці", f"{facts['n_channels']} з {len(channels)}"),
         ("Частка форвардів", f"{fmt(100 * facts['share_forwarded'], 1)}%"),
         ("Період", f"{facts['date_min']} - {facts['date_max']} ({facts['n_months']} міс.)"),
-        ("Повідомлень на місяць (мін / медіана / макс)",
-         f"{facts['per_month_min']} / {fmt(facts['per_month_median'], 1)} / {facts['per_month_max']}"),
+        ("Повідомлень на місяць, повні місяці (мін / медіана / макс)",
+         f"{facts['per_month_full_min']} / {fmt(facts['per_month_full_median'], 1)} / {facts['per_month_full_max']}"),
+        ("Неповні крайні місяці (перший / останній)", " / ".join(str(v) for v in facts["per_month_first_last"])),
         ("Довжина тексту, символів (медіана / середня / 90-й перцентиль)",
          f"{fmt(facts['text_len_median'], 0)} / {fmt(facts['text_len_mean'], 0)} / {fmt(facts['text_len_p90'], 0)}"),
         ("Частка найбільшого каналу / п'яти найбільших",
@@ -100,16 +101,16 @@ def main() -> None:
     iaa_t = iaa.rename(columns={"case": "Випадок", "n_items": "Об'єктів", "fleiss_kappa_recomputed": "κ Фляйса (перераховано)",
                                 "fleiss_kappa_in_file": "κ Фляйса (у файлі)", "abs_diff": "|Δ|"})
 
-    orig = models[["model", "n_test", "general_f1_reported", "weighted_f1_recomputed", "macro_f1_recomputed", "f1_pos",
+    orig = models[["model", "n_test", "general_f1_reported", "accuracy_recomputed", "macro_f1_recomputed", "f1_pos",
                    "mcc_recomputed", "pr_auc", "roc_auc"]].rename(columns={
         "model": "Модель", "n_test": "n (test)", "general_f1_reported": "F1 у файлі (general_f1)",
-        "weighted_f1_recomputed": "зважений F1 (перераховано)", "macro_f1_recomputed": "macro-F1 (перераховано)",
+        "accuracy_recomputed": "accuracy (перераховано)", "macro_f1_recomputed": "macro-F1 (перераховано)",
         "f1_pos": "F1 класу «наратив»", "mcc_recomputed": "MCC", "pr_auc": "PR-AUC", "roc_auc": "ROC-AUC"})
     split_t = models[["model", "n_train", "n_val", "n_test", "n_total", "share_pos_test"]].rename(columns={
         "model": "Модель", "n_train": "train", "n_val": "val", "n_test": "test", "n_total": "разом",
         "share_pos_test": "частка наративних у test"})
-    curves_t = curves.rename(columns={"model": "Модель", "n_epochs_val": "епох", "val_f1_min": "мін. val F1",
-                                      "val_f1_max": "макс. val F1", "val_f1_std": "σ", "max_abs_step": "макс. стрибок за епоху"})
+    curves_t = curves.rename(columns={"model": "Модель", "n_epochs_val": "епох", "val_f1_min": "мін. val",
+                                      "val_f1_max": "макс. val", "val_f1_std": "σ", "max_abs_step": "макс. стрибок за епоху"})
     weak_t = weak.rename(columns={"method": "Метод", "file": "Файл", "support": "n", "precision": "precision",
                                   "recall": "recall", "f1_pos": "F1 «наратив»", "mcc": "MCC", "roc_auc": "ROC-AUC"})
 
@@ -147,10 +148,13 @@ def main() -> None:
 
 {md_table(orig)}
 
-**Важливо про метрику.** Колонка `general_f1` у файлах авторів дорівнює зваженому F1, а не macro-F1. Для текстового
-бейзлайну зважений F1 дорівнює {fmt(base['weighted_f1_recomputed'])}, macro-F1 дорівнює {fmt(base['macro_f1_recomputed'])},
-F1 класу «наратив» дорівнює {fmt(base['f1_pos'])}. У нашій роботі основна метрика macro-F1, тому числа оригіналу
-в таблиці вище не можна порівнювати з нашими без цього перерахунку.
+**Важливо про метрику.** Колонка `general_f1` у файлах авторів не є macro-F1. За їхнім кодом
+(`compute_general_f1` у `src/disinfograph/gnn/train_graph_model.py` і `_general_f1` у `train_roberta_text_baseline.py`)
+вона рахується із сум tp, fp, fn по обох класах, тобто це micro-F1, який для бінарної задачі дорівнює accuracy.
+Перерахунок за матрицею помилок це підтверджує для всіх п'яти моделей (перевірка в розділі 5). Для текстового
+бейзлайну `general_f1` = {fmt(base['general_f1_reported'])}, macro-F1 = {fmt(base['macro_f1_recomputed'])},
+F1 класу «наратив» = {fmt(base['f1_pos'])}. У нашій роботі основна метрика macro-F1 разом з MCC і PR-AUC, тому число
+«F1» з таблиці 2.3 плану насправді є accuracy і напряму з нашими числами не порівнюється.
 
 Розміри вибірок за сплітами:
 
@@ -162,7 +166,7 @@ F1 класу «наратив» дорівнює {fmt(base['f1_pos'])}. У на
 {fmt(int(full_graph['n_test'].iloc[0]))}), тому пряме порівняння лише орієнтовне. Найкращий GNN на повному графі за macro-F1
 ({best_gnn['model']}: {fmt(best_gnn['macro_f1_recomputed'])}) {verb} текстовий бейзлайн ({fmt(base['macro_f1_recomputed'])}).
 
-Стабільність навчання за валідаційними кривими (F1 на val по епохах, як у файлах авторів):
+Стабільність навчання за валідаційними кривими (`general_f1`, тобто accuracy, на val по епохах, як у файлах авторів):
 
 {md_table(curves_t)}
 
