@@ -1,0 +1,8 @@
+community,n_channels,n_group,nn_group,weight_inside,weight_touching,inside_share,top_channels
+0,45,32,13,2212.0,2242.0,0.9866190900981266,"rian_ru, MonitoringUA, kherson_news_info"
+1,8,7,1,840.0,868.0,0.967741935483871,"zaporojie24, NowMelitopol, depzdravzo"
+2,7,0,7,101.0,103.0,0.9805825242718447,"truexanewsua, truexakyiv, truexakharkiv"
+3,5,0,5,820.0,821.0,0.9987819732034104,"suspilnenews, suspilnelviv, hromadske_ua"
+4,4,0,4,123.0,123.0,1.0,"kpszsu, UkraineNow, Ukrainerada"
+5,2,0,2,30810.0,30811.0,0.99996754405894,"u_now_ua, u_now"
+6,2,0,2,30.0,30.0,1.0,"energadartoday, atomgradenergodar"

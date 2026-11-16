@@ -1,0 +1,169 @@
+{
+  "edges": {
+    "n_input": 214,
+    "n_loops_removed": 0,
+    "n_duplicate_pairs_merged": 0,
+    "n_edges": 214
+  },
+  "n_nodes": 73,
+  "n_edges": 214,
+  "weight_sum": 34967.0,
+  "weight_max": 30810.0,
+  "mirror_pair": {
+    "src": "u_now",
+    "dst": "u_now_ua",
+    "weight": 30810.0,
+    "share_of_weight": 0.8811164812537535
+  },
+  "nodes_by_group": {
+    "n": 39,
+    "nn": 34
+  },
+  "n_weak_components": 4,
+  "largest_component_nodes": 60,
+  "src_nodes": 54,
+  "dst_nodes": 62,
+  "leiden": {
+    "raw": {
+      "n_runs": 10,
+      "n_pairs": 45,
+      "nmi_mean": 1.0,
+      "nmi_min": 1.0,
+      "modularity_min": 0.30475260217942063,
+      "modularity_max": 0.30475260217942063,
+      "n_communities_values": [
+        7
+      ],
+      "best_seed": 42,
+      "best_modularity": 0.30475260217942063,
+      "best_n_communities": 7
+    },
+    "log": {
+      "n_runs": 10,
+      "n_pairs": 45,
+      "nmi_mean": 0.9301257634198629,
+      "nmi_min": 0.8257187850931552,
+      "modularity_min": 0.525731815268154,
+      "modularity_max": 0.5394066115197949,
+      "n_communities_values": [
+        9,
+        10,
+        11
+      ],
+      "best_seed": 43,
+      "best_modularity": 0.5394066115197949,
+      "best_n_communities": 10
+    },
+    "none": {
+      "n_runs": 10,
+      "n_pairs": 45,
+      "nmi_mean": 1.0,
+      "nmi_min": 1.0,
+      "modularity_min": 0.5590183449833644,
+      "modularity_max": 0.5590183449833644,
+      "n_communities_values": [
+        9
+      ],
+      "best_seed": 42,
+      "best_modularity": 0.5590183449833644,
+      "best_n_communities": 9
+    }
+  },
+  "cross_variant_nmi": {
+    "raw_vs_log": 0.7448391489572305,
+    "raw_vs_none": 0.7469534166916896,
+    "log_vs_none": 0.9470102981730338
+  },
+  "nmi_partition_vs_group": {
+    "raw": 0.2794902217490715,
+    "log": 0.25518242272192615,
+    "none": 0.2650468687283355
+  },
+  "cross_group": {
+    "main_weight": {
+      "total": 34967.0,
+      "n_to_n": 2959.0,
+      "n_to_nn": 57.0,
+      "nn_to_n": 64.0,
+      "nn_to_nn": 31887.0,
+      "cross": 121.0,
+      "cross_share": 0.0034604055252094833
+    },
+    "no_mirror_pair_weight": {
+      "total": 4157.0,
+      "n_to_n": 2959.0,
+      "n_to_nn": 57.0,
+      "nn_to_n": 64.0,
+      "nn_to_nn": 1077.0,
+      "cross": 121.0,
+      "cross_share": 0.02910752946836661
+    },
+    "edge_count": {
+      "total": 214.0,
+      "n_to_n": 156.0,
+      "n_to_nn": 17.0,
+      "nn_to_n": 16.0,
+      "nn_to_nn": 25.0,
+      "cross": 33.0,
+      "cross_share": 0.1542056074766355
+    },
+    "labeled_status_channels_weight": {
+      "total": 34813.0,
+      "n_to_n": 2959.0,
+      "n_to_nn": 0.0,
+      "nn_to_n": 3.0,
+      "nn_to_nn": 31851.0,
+      "cross": 3.0,
+      "cross_share": 8.617470485163588e-05
+    }
+  },
+  "cross_group_permutation": {
+    "main_weight": {
+      "observed": 0.0034604055252094833,
+      "null_mean": 0.4980447107272572,
+      "null_p05": 0.03958017559413161,
+      "p_le_observed": 9.999000099990002e-05,
+      "n_perm": 10000
+    },
+    "no_mirror_pair_weight": {
+      "observed": 0.02910752946836661,
+      "null_mean": 0.503951431320664,
+      "null_p05": 0.29731777724320424,
+      "p_le_observed": 9.999000099990002e-05,
+      "n_perm": 10000
+    },
+    "edge_count": {
+      "observed": 0.1542056074766355,
+      "null_mean": 0.5047598130841122,
+      "null_p05": 0.4392523364485981,
+      "p_le_observed": 9.999000099990002e-05,
+      "n_perm": 10000
+    }
+  },
+  "assortativity": {
+    "weight": 0.9780698410084759,
+    "no_mirror_pair_weight": 0.9267770180949189,
+    "edge_count": 0.5067746892024025
+  },
+  "seeds": [
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51
+  ],
+  "gold_coverage": {
+    "n_messages": 412,
+    "n_channels": 56,
+    "messages_in_graph_channels": 305,
+    "channels_in_graph": 44,
+    "narrative_total": 148,
+    "narrative_in_graph_channels": 140,
+    "non_narrative_in_graph_channels": 165
+  }
+}

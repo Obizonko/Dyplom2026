@@ -1,0 +1,32 @@
+{
+  "script": "scripts/s03_network.py",
+  "timestamp_utc": "2026-11-16T10:01:11+00:00",
+  "git_commit": "811526c648d6518acaab85e0941427a27fc04865",
+  "git_dirty": false,
+  "params": {
+    "edges": "/home/claude/dyplom2026/data_small/channel_flow_edges.csv",
+    "channels": "/home/claude/dyplom2026/results/02_eda/per_channel.csv",
+    "n_perm": 10000,
+    "seeds": [
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49,
+      50,
+      51
+    ],
+    "seed": 42,
+    "golden": "/home/claude/dyplom2026/external/TeleNarratives/labeling results/strong labeling/golden set (labeled).csv",
+    "seconds": 1
+  },
+  "versions": {
+    "python": "3.13.18",
+    "numpy": "2.5.3",
+    "pandas": "3.0.5",
+    "scikit-learn": "1.9.1"
+  }
+}
