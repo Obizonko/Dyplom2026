@@ -15,7 +15,7 @@
     "median_n_labeled": 238.5,
     "n_in_table": 56
   },
-  "implicit_template": "written",
+  "implicit_template": "labeled",
   "implicit_auto_b": {
     "n_narrative": 148,
     "n_implicit": 20,
@@ -24,5 +24,85 @@
     "n_narrative_ru": 141,
     "n_narrative_uk": 7
   },
-  "train_side": "pending_S4: index, exclude, pairs"
+  "implicit_manual_a": {
+    "n_rows": 148,
+    "n_filled": 148,
+    "bad_values": [],
+    "bad_codes": [],
+    "explicit": {
+      "all": 70,
+      "ru": 68,
+      "uk": 2
+    },
+    "implicit": {
+      "all": 66,
+      "ru": 63,
+      "uk": 3
+    },
+    "unclear": {
+      "all": 12,
+      "ru": 10,
+      "uk": 2
+    },
+    "implicit_narrow": {
+      "all": 59,
+      "ru": 56,
+      "uk": 3
+    },
+    "implicit_wide": {
+      "all": 79,
+      "ru": 76,
+      "uk": 3
+    },
+    "n_borderline": 20,
+    "by_code": {
+      "direct": 63,
+      "framing": 44,
+      "irony": 10,
+      "quote": 7,
+      "context": 4,
+      "fragment": 1,
+      "mixed": 7,
+      "unrelated": 12
+    },
+    "min_implicit": 30,
+    "enough_ru": {
+      "base": true,
+      "narrow": true,
+      "wide": true
+    }
+  },
+  "implicit_a_vs_b": {
+    "explicit": {
+      "b_implicit": 6,
+      "b_not_implicit": 64
+    },
+    "implicit": {
+      "b_implicit": 9,
+      "b_not_implicit": 57
+    },
+    "unclear": {
+      "b_implicit": 5,
+      "b_not_implicit": 7
+    }
+  },
+  "pool": {
+    "n_labeled": 81584,
+    "n_excluded": 52,
+    "n_pool": 81532,
+    "reason_is_gold": 10,
+    "reason_same_text_as_gold": 38,
+    "reason_semantic_copy_of_gold": 42,
+    "first_reason_is_gold": 10,
+    "first_reason_same_text_as_gold": 28,
+    "first_reason_semantic_copy_of_gold": 14,
+    "n_pool_narrative": 29635,
+    "n_pool_channels": 95,
+    "weak_narrative_share_pool": 0.3634769170387087,
+    "date_min": "2024-12-16 05:01:36+00:00",
+    "date_max": "2026-02-27 07:53:48+00:00",
+    "n_exclude_keys_s04": 42,
+    "n_gold_with_text_hash": 412
+  },
+  "train_side": "done"
 }

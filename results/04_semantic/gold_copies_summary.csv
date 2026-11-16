@@ -1,0 +1,5 @@
+threshold,n_gold,gold_with_neighbor,gold_with_labeled_neighbor,neighbor_messages,neighbor_messages_in_labeled,pairs,pairs_exact_text
+0.95,412,34,18,1439,410,1439,138
+0.975,412,26,15,500,96,500,138
+0.985,412,25,13,345,42,345,138
+0.99,412,23,13,236,42,236,138

@@ -28,5 +28,197 @@
     "check": "Групи P3 збалансовані за розміром, кількістю наративних і російськомовних (найбільша не більш ніж у 1,5 раза більша за найменшу)",
     "passed": true,
     "detail": "n_test: 79 до 90; n_narrative: 27 до 32; n_ru: 38 до 42"
+  },
+  {
+    "hard": true,
+    "check": "Розмітку (а) заповнено для всіх 148 рядків, значення й коди причин допустимі",
+    "passed": true,
+    "detail": "заповнено 148 з 148; невалідні значення [], коди []"
+  },
+  {
+    "hard": false,
+    "check": "Російськомовних неявних не менше 30 (умова H1)",
+    "passed": true,
+    "detail": "базово 63, вузьке 56, широке 76"
+  },
+  {
+    "hard": true,
+    "check": "P1: Перетин ключів train і test порожній",
+    "passed": true,
+    "detail": "0 спільних ключів"
+  },
+  {
+    "hard": true,
+    "check": "P1: Немає train-повідомлень з тим самим нормалізованим текстом, що й у test",
+    "passed": true,
+    "detail": "0 збігів"
+  },
+  {
+    "hard": true,
+    "check": "P1: Немає train-повідомлень зі схожістю до test не нижче 0,985",
+    "passed": true,
+    "detail": "0 пар (з 345 пар копій test)"
+  },
+  {
+    "hard": true,
+    "check": "P2: Перетин ключів train і test порожній",
+    "passed": true,
+    "detail": "0 спільних ключів"
+  },
+  {
+    "hard": true,
+    "check": "P2: Немає train-повідомлень з тим самим нормалізованим текстом, що й у test",
+    "passed": true,
+    "detail": "0 збігів"
+  },
+  {
+    "hard": true,
+    "check": "P2: Немає train-повідомлень зі схожістю до test не нижче 0,985",
+    "passed": true,
+    "detail": "0 пар (з 102 пар копій test)"
+  },
+  {
+    "hard": true,
+    "check": "P3 група 1: Перетин ключів train і test порожній",
+    "passed": true,
+    "detail": "0 спільних ключів"
+  },
+  {
+    "hard": true,
+    "check": "P3 група 1: Немає train-повідомлень з тим самим нормалізованим текстом, що й у test",
+    "passed": true,
+    "detail": "0 збігів"
+  },
+  {
+    "hard": true,
+    "check": "P3 група 1: Немає train-повідомлень зі схожістю до test не нижче 0,985",
+    "passed": true,
+    "detail": "0 пар (з 234 пар копій test)"
+  },
+  {
+    "hard": true,
+    "check": "P3 група 1: Канали train і test не перетинаються",
+    "passed": true,
+    "detail": "0 спільних каналів"
+  },
+  {
+    "hard": true,
+    "check": "P3 група 2: Перетин ключів train і test порожній",
+    "passed": true,
+    "detail": "0 спільних ключів"
+  },
+  {
+    "hard": true,
+    "check": "P3 група 2: Немає train-повідомлень з тим самим нормалізованим текстом, що й у test",
+    "passed": true,
+    "detail": "0 збігів"
+  },
+  {
+    "hard": true,
+    "check": "P3 група 2: Немає train-повідомлень зі схожістю до test не нижче 0,985",
+    "passed": true,
+    "detail": "0 пар (з 12 пар копій test)"
+  },
+  {
+    "hard": true,
+    "check": "P3 група 2: Канали train і test не перетинаються",
+    "passed": true,
+    "detail": "0 спільних каналів"
+  },
+  {
+    "hard": true,
+    "check": "P3 група 3: Перетин ключів train і test порожній",
+    "passed": true,
+    "detail": "0 спільних ключів"
+  },
+  {
+    "hard": true,
+    "check": "P3 група 3: Немає train-повідомлень з тим самим нормалізованим текстом, що й у test",
+    "passed": true,
+    "detail": "0 збігів"
+  },
+  {
+    "hard": true,
+    "check": "P3 група 3: Немає train-повідомлень зі схожістю до test не нижче 0,985",
+    "passed": true,
+    "detail": "0 пар (з 82 пар копій test)"
+  },
+  {
+    "hard": true,
+    "check": "P3 група 3: Канали train і test не перетинаються",
+    "passed": true,
+    "detail": "0 спільних каналів"
+  },
+  {
+    "hard": true,
+    "check": "P3 група 4: Перетин ключів train і test порожній",
+    "passed": true,
+    "detail": "0 спільних ключів"
+  },
+  {
+    "hard": true,
+    "check": "P3 група 4: Немає train-повідомлень з тим самим нормалізованим текстом, що й у test",
+    "passed": true,
+    "detail": "0 збігів"
+  },
+  {
+    "hard": true,
+    "check": "P3 група 4: Немає train-повідомлень зі схожістю до test не нижче 0,985",
+    "passed": true,
+    "detail": "0 пар (з 16 пар копій test)"
+  },
+  {
+    "hard": true,
+    "check": "P3 група 4: Канали train і test не перетинаються",
+    "passed": true,
+    "detail": "0 спільних каналів"
+  },
+  {
+    "hard": true,
+    "check": "P3 група 5: Перетин ключів train і test порожній",
+    "passed": true,
+    "detail": "0 спільних ключів"
+  },
+  {
+    "hard": true,
+    "check": "P3 група 5: Немає train-повідомлень з тим самим нормалізованим текстом, що й у test",
+    "passed": true,
+    "detail": "0 збігів"
+  },
+  {
+    "hard": true,
+    "check": "P3 група 5: Немає train-повідомлень зі схожістю до test не нижче 0,985",
+    "passed": true,
+    "detail": "0 пар (з 1 пар копій test)"
+  },
+  {
+    "hard": true,
+    "check": "P3 група 5: Канали train і test не перетинаються",
+    "passed": true,
+    "detail": "0 спільних каналів"
+  },
+  {
+    "hard": true,
+    "check": "Пул і виключені разом дають усю розмічену партію",
+    "passed": true,
+    "detail": "81 532 + 52 = 81 584"
+  },
+  {
+    "hard": true,
+    "check": "У кожному train є обидва класи слабких міток, у кожному test обидва класи золотих",
+    "passed": true,
+    "detail": "train наративних 21195 до 29635"
+  },
+  {
+    "hard": true,
+    "check": "Для всіх 412 золотих знайдено хеш тексту в індексі S4",
+    "passed": true,
+    "detail": "412 з 412"
+  },
+  {
+    "hard": false,
+    "check": "Усі ключі списку виключення S4 є в розміченій партії",
+    "passed": true,
+    "detail": "42 ключів"
   }
 ]

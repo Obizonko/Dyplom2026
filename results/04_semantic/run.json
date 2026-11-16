@@ -1,0 +1,33 @@
+{
+  "script": "scripts/s04_semantic.py",
+  "timestamp_utc": "2026-11-16T11:05:29+00:00",
+  "git_commit": null,
+  "git_dirty": false,
+  "params": {
+    "libs": {
+      "torch": "2.14.1+cu130",
+      "sentence-transformers": "5.7.0",
+      "transformers": "5.22.1",
+      "hnswlib": "0.8.0",
+      "umap-learn": "0.5.12",
+      "scipy": "1.16.3",
+      "langid": "1.1.6"
+    },
+    "raw_dir": "/content/drive/MyDrive/narratives-thesis/data/raw",
+    "encoder": "bge-m3",
+    "k": 80,
+    "max_len": 512,
+    "batch_size": 64,
+    "seed": 42,
+    "umap_n": 20000,
+    "n_perm": 20,
+    "model": "BAAI/bge-m3",
+    "seconds": 1219
+  },
+  "versions": {
+    "python": "3.13.16",
+    "numpy": "2.4.6",
+    "pandas": "2.2.3",
+    "scikit-learn": "1.6.1"
+  }
+}
