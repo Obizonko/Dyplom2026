@@ -6,15 +6,18 @@ import nbformat as nbf
 MD_INTRO = """# S1. Завантаження повних даних TeleNarratives з OSF і маніфест
 
 **Що робить ноутбук:** завантажує файли з OSF на ваш Google Drive (`MyDrive/narratives-thesis/data/raw/`),
-рахує для кожного файлу розмір, sha256, кількість рядків, колонки, 3 приклади і профіль колонок, зберігає `data_manifest.json`.
+розпаковує архіви `tar.gz` у `data/raw/extracted/`, рахує для кожного файлу розмір, sha256, кількість рядків, колонки,
+3 приклади і профіль колонок, зберігає `data_manifest.json` у `MyDrive/narratives-thesis/`.
+
+**За замовчуванням пропускаються дампи Neo4j** (`SKIP_PATTERNS` у комірці 1; вони важать понад 4,7 ГБ).
+Щоб завантажити все, зробіть `SKIP_PATTERNS = []`.
 
 **Що зробити вам:** Runtime → Run all (GPU не потрібен). Дозвольте доступ до Drive у першій комірці.
-Наприкінці надішліть мені файл `data_manifest.json` (він також завантажиться у браузер автоматично і лежить у
-`MyDrive/narratives-thesis/data_manifest.json`).
+Маніфест я прочитаю з Drive сам, надсилати його не потрібно.
 
-**Якщо OSF не дає завантажити програмно** (view-only посилання часто обмежене): завантажте файли вручну з
+**Якщо OSF не дає завантажити програмно:** завантажте файли вручну з
 https://osf.io/mjcs9/overview?view_only=07148b5ce53b412998ec179587ad8240 у папку `MyDrive/narratives-thesis/data/raw/`
-і просто запустіть ноутбук: комірки завантаження пропустять відсутнє, а маніфест буде побудовано з того, що є в папці.
+і запустіть ноутбук: відсутнє буде пропущено, маніфест побудується з того, що є в папці.
 """
 
 CELL_SETUP = '''# 1. Підключення Drive і налаштування
@@ -32,6 +35,9 @@ OSF_NODE = "mjcs9"
 VIEW_ONLY = "07148b5ce53b412998ec179587ad8240"
 TARGET = BASE / "data" / "raw"
 TARGET.mkdir(parents=True, exist_ok=True)
+
+# Файли, у назві яких є ці фрагменти, не завантажуються (дампи Neo4j важкі). Порожній список = завантажити все.
+SKIP_PATTERNS = ["neo4j"]
 print("Папка даних:", TARGET)
 '''
 
@@ -67,13 +73,13 @@ try:
     total = sum(f["size"] or 0 for f in OSF_FILES)
     print(f"Знайдено файлів: {len(OSF_FILES)}, разом {total / 1e9:.2f} ГБ")
     for f in OSF_FILES:
-        print(f"  {f['path']:70s} {((f['size'] or 0) / 1e6):10.1f} МБ")
+        print(f"  {f['path']:80s} {((f['size'] or 0) / 1e6):10.1f} МБ")
 except Exception as e:
     print("Не вдалося отримати перелік з OSF:", repr(e))
     print("Завантажте файли вручну (див. інструкцію вище) і запустіть наступні комірки.")
 '''
 
-CELL_DOWNLOAD = '''# 3. Завантаження (пропускає вже завантажені файли з тим самим розміром)
+CELL_DOWNLOAD = '''# 3. Завантаження (пропускає вже завантажені файли з тим самим розміром і файли зі SKIP_PATTERNS)
 def download(f, retries=3):
     dst = TARGET / f["path"]
     dst.parent.mkdir(parents=True, exist_ok=True)
@@ -88,18 +94,58 @@ def download(f, retries=3):
                     for chunk in r.iter_content(8 << 20):
                         out.write(chunk)
             tmp.rename(dst)
-            print(f"  ок: {f['path']} ({dst.stat().st_size / 1e6:.1f} МБ)")
+            print(f"  ок: {f['path']} ({dst.stat().st_size / 1e6:.1f} МБ)", flush=True)
             return True
         except Exception as e:
             print(f"  спроба {attempt} не вдалась для {f['path']}: {e!r}")
             time.sleep(5 * attempt)
     return False
 
-failed = [f["path"] for f in OSF_FILES if not download(f)]
+skip = lambda f: any(p.lower() in f["path"].lower() for p in SKIP_PATTERNS)
+wanted = [f for f in OSF_FILES if not skip(f)]
+print(f"До завантаження: {len(wanted)} файлів, {sum(f['size'] or 0 for f in wanted) / 1e9:.2f} ГБ. "
+      f"Пропущено: {[f['path'] for f in OSF_FILES if skip(f)] or 'нічого'}")
+failed = [f["path"] for f in wanted if not download(f)]
 print("Не завантажено:", failed or "нічого")
 '''
 
-CELL_MANIFEST = '''# 4. Маніфест: розмір, sha256, рядки, колонки, приклади, профіль колонок
+CELL_EXTRACT = '''# 4. Розпакування архівів tar.gz у data/raw/extracted/<назва архіву>/ (безпечне: без виходу за межі папки)
+import tarfile
+
+EXTRACT_DIR = TARGET / "extracted"
+
+def safe_extract(tar_path, dest):
+    dest = dest.resolve()
+    dest.mkdir(parents=True, exist_ok=True)
+    n = 0
+    with tarfile.open(tar_path, "r:gz") as tf:
+        for m in tf:
+            target = (dest / m.name).resolve()
+            if target != dest and not str(target).startswith(str(dest) + os.sep):
+                print("  пропущено небезпечний шлях:", m.name)
+                continue
+            if not (m.isfile() or m.isdir()):
+                continue
+            try:
+                tf.extract(m, dest, filter="data")
+            except TypeError:       # старіші версії Python без параметра filter
+                tf.extract(m, dest)
+            n += 1
+    return n
+
+for tar_path in sorted(TARGET.glob("*.tar.gz")):
+    dest = EXTRACT_DIR / tar_path.name[: -len(".tar.gz")]
+    if (dest / ".extracted_ok").exists():
+        print("  вже розпаковано:", tar_path.name)
+        continue
+    print("  розпаковую:", tar_path.name, flush=True)
+    n = safe_extract(tar_path, dest)
+    (dest / ".extracted_ok").write_text(str(n))
+    print(f"  ок: {n} елементів")
+'''
+
+CELL_MANIFEST = '''# 5. Маніфест: розмір, sha256, рядки, колонки, приклади, профіль колонок
+import tarfile
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
@@ -143,22 +189,26 @@ def info_parquet(path):
     info["sample"] = sample_rows(next(pf.iter_batches(batch_size=3)).to_pandas())
     prof = {}
     for f in pf.schema_arrow:   # по одній колонці, щоб не тримати все в пам'яті; списки (ембеддинги) пропускаємо
-        if pa.types.is_list(f.type) or pa.types.is_large_list(f.type) or pa.types.is_fixed_size_list(f.type):
-            first = pf.read_row_group(0, columns=[f.name]).column(0)[0].as_py()
-            prof[f.name] = {"kind": "vector", "length_first_row": len(first) if first is not None else None}
-            continue
-        prof[f.name] = profile_series(pq.read_table(path, columns=[f.name]).column(0).to_pandas())
+        try:
+            if pa.types.is_list(f.type) or pa.types.is_large_list(f.type) or pa.types.is_fixed_size_list(f.type):
+                first = pf.read_row_group(0, columns=[f.name]).column(0)[0].as_py()
+                prof[f.name] = {"kind": "vector", "length_first_row": len(first) if first is not None else None}
+                continue
+            prof[f.name] = profile_series(pq.read_table(path, columns=[f.name]).column(0).to_pandas())
+        except Exception as e:
+            prof[f.name] = {"error": repr(e)[:200]}
     info["column_profile"] = prof
     return info
 
 def info_csv(path):
     n = 0
-    prof_src = []
-    for chunk in pd.read_csv(path, chunksize=200_000):
+    head = None
+    for chunk in pd.read_csv(path, chunksize=200_000, low_memory=False):
         n += len(chunk)
-        if len(prof_src) < 1:
-            prof_src.append(chunk)
-    head = prof_src[0]
+        if head is None:
+            head = chunk
+    if head is None:
+        return {"rows": 0}
     return {"rows": n, "columns": [{"name": c, "type": str(t)} for c, t in head.dtypes.items()],
             "sample": sample_rows(head), "column_profile": {c: profile_series(head[c]) for c in head.columns},
             "profile_note": "профіль колонок за першим блоком до 200 000 рядків"}
@@ -171,17 +221,27 @@ def info_graphml(path):
             edges += line.count(b"<edge ")
     return {"nodes": nodes, "edges": edges}
 
+def info_tar(path):
+    members = []
+    with tarfile.open(path, "r:gz") as tf:
+        for m in tf:
+            if m.isfile():
+                members.append({"name": m.name, "size": m.size})
+    return {"members": len(members), "member_list": members[:200]}
+
 def file_info(path, root):
     info = {"file": str(path.relative_to(root)), "size_bytes": path.stat().st_size}
     t0 = time.time()
-    suf = path.suffix.lower()
+    name = path.name.lower()
     try:
-        if suf == ".parquet":
+        if name.endswith(".parquet"):
             info.update(info_parquet(path))
-        elif suf == ".csv":
+        elif name.endswith(".csv"):
             info.update(info_csv(path))
-        elif suf == ".graphml":
+        elif name.endswith(".graphml"):
             info.update(info_graphml(path))
+        elif name.endswith((".tar.gz", ".tgz")):
+            info.update(info_tar(path))
     except Exception as e:
         info["error"] = repr(e)
     info["sha256"] = sha256(path)
@@ -189,7 +249,8 @@ def file_info(path, root):
     return info
 
 def build_manifest(root):
-    files = sorted(p for p in Path(root).rglob("*") if p.is_file() and not p.name.endswith(".part"))
+    files = sorted(p for p in Path(root).rglob("*")
+                   if p.is_file() and not p.name.endswith(".part") and not p.name.startswith("."))
     items = []
     for p in files:
         print("профілюю:", p.relative_to(root), flush=True)
@@ -197,32 +258,29 @@ def build_manifest(root):
     return {"created_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "root": str(root), "files": items}
 '''
 
-CELL_RUN = '''# 5. Побудова і збереження маніфесту
+CELL_RUN = '''# 6. Побудова і збереження маніфесту
 manifest = build_manifest(TARGET)
+manifest["osf_listing"] = [{"path": f["path"], "size": f["size"]} for f in globals().get("OSF_FILES", [])]
+manifest["skipped_patterns"] = globals().get("SKIP_PATTERNS", [])
 out_path = BASE / "data_manifest.json"
 out_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
 print("Збережено:", out_path)
 
 summary = pd.DataFrame([{"файл": f["file"], "МБ": round(f["size_bytes"] / 1e6, 1),
-                         "рядків/вузлів": f.get("rows", f.get("nodes")), "колонок": len(f.get("columns", [])) or None,
-                         "помилка": f.get("error")} for f in manifest["files"]])
+                         "рядків/вузлів/файлів": f.get("rows", f.get("nodes", f.get("members"))),
+                         "колонок": len(f.get("columns", [])) or None, "помилка": f.get("error")} for f in manifest["files"]])
 try:
     display(summary)
 except NameError:
     print(summary.to_string())
-
-try:
-    from google.colab import files
-    files.download(str(out_path))
-except ImportError:
-    pass
 '''
 
 
 def build(path: Path) -> None:
     nb = nbf.v4.new_notebook()
     nb.cells = [nbf.v4.new_markdown_cell(MD_INTRO), nbf.v4.new_code_cell(CELL_SETUP), nbf.v4.new_code_cell(CELL_LIST),
-                nbf.v4.new_code_cell(CELL_DOWNLOAD), nbf.v4.new_code_cell(CELL_MANIFEST), nbf.v4.new_code_cell(CELL_RUN)]
+                nbf.v4.new_code_cell(CELL_DOWNLOAD), nbf.v4.new_code_cell(CELL_EXTRACT),
+                nbf.v4.new_code_cell(CELL_MANIFEST), nbf.v4.new_code_cell(CELL_RUN)]
     nb.metadata = {"colab": {"name": "01_fetch_osf.ipynb"}, "kernelspec": {"name": "python3", "display_name": "Python 3"}}
     nbf.validate(nb)
     nbf.write(nb, path)
