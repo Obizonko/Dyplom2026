@@ -133,13 +133,28 @@ def safe_extract(tar_path, dest):
             n += 1
     return n
 
+import shutil
+
+def is_skipped(name):
+    return any(p.lower() in name.lower() for p in SKIP_PATTERNS)
+
 for tar_path in sorted(TARGET.glob("*.tar.gz")):
     dest = EXTRACT_DIR / tar_path.name[: -len(".tar.gz")]
+    if is_skipped(tar_path.name):      # файл міг лишитися в папці від попереднього запуску
+        print("  пропущено (SKIP_PATTERNS):", tar_path.name)
+        if dest.exists() and not (dest / ".extracted_ok").exists():
+            print("  видаляю недороблену розпаковку:", dest.name)
+            shutil.rmtree(dest, ignore_errors=True)
+        continue
     if (dest / ".extracted_ok").exists():
         print("  вже розпаковано:", tar_path.name)
         continue
     print("  розпаковую:", tar_path.name, flush=True)
-    n = safe_extract(tar_path, dest)
+    try:
+        n = safe_extract(tar_path, dest)
+    except Exception as e:
+        print("  ПОМИЛКА розпакування:", tar_path.name, repr(e))
+        continue
     (dest / ".extracted_ok").write_text(str(n))
     print(f"  ок: {n} елементів")
 '''
@@ -233,6 +248,9 @@ def file_info(path, root):
     info = {"file": str(path.relative_to(root)), "size_bytes": path.stat().st_size}
     t0 = time.time()
     name = path.name.lower()
+    if any(p.lower() in name for p in globals().get("SKIP_PATTERNS", [])):
+        info["skipped"] = "SKIP_PATTERNS: не профілюється (великий дамп)"
+        return info
     try:
         if name.endswith(".parquet"):
             info.update(info_parquet(path))
@@ -281,7 +299,7 @@ def build(path: Path) -> None:
     nb.cells = [nbf.v4.new_markdown_cell(MD_INTRO), nbf.v4.new_code_cell(CELL_SETUP), nbf.v4.new_code_cell(CELL_LIST),
                 nbf.v4.new_code_cell(CELL_DOWNLOAD), nbf.v4.new_code_cell(CELL_EXTRACT),
                 nbf.v4.new_code_cell(CELL_MANIFEST), nbf.v4.new_code_cell(CELL_RUN)]
-    nb.metadata = {"colab": {"name": "01_fetch_osf.ipynb"}, "kernelspec": {"name": "python3", "display_name": "Python 3"}}
+    nb.metadata = {"colab": {"name": "01_fetch_osf_v3.ipynb"}, "kernelspec": {"name": "python3", "display_name": "Python 3"}}
     nbf.validate(nb)
     nbf.write(nb, path)
 
