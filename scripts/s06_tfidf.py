@@ -165,6 +165,10 @@ def main() -> None:
 
     # ---------- рисунок ----------
     show = binary[binary.model.isin(["majority", "stratified", *LR_MODELS]) & binary.metric.isin(["macro_f1", "mcc", "pr_auc"])]
+    rule_rows = lang_rule[lang_rule.metric.isin(["macro_f1", "mcc", "pr_auc"])].copy()
+    rule_rows.insert(0, "model", "правило: ru = наратив")
+    rule_rows.insert(0, "setting", "random_cv")
+    show = pd.concat([show, rule_rows], ignore_index=True)
     fig_metrics_ci(show, out / "figures" / "binary_metrics_ci.png",
                    "Золота розмітка (412), бінарна задача: out-of-fold метрики з 95% CI")
 

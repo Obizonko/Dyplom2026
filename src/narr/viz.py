@@ -67,7 +67,7 @@ def fig_metrics_ci(table: pd.DataFrame, out: Path, title: str) -> None:
         ax.set_xlabel(label)
         ax.grid(axis="x", alpha=0.3)
         ax.invert_yaxis()
-    axes[0].legend(frameon=False, loc="lower right")
+    axes[1].legend(frameon=False, loc="center")
     fig.suptitle(title)
     fig.tight_layout()
     out.parent.mkdir(parents=True, exist_ok=True)
