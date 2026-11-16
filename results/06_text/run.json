@@ -1,0 +1,32 @@
+{
+  "script": "scripts/s06_tfidf.py",
+  "timestamp_utc": "2026-11-16T07:26:17+00:00",
+  "git_commit": "017f33c5b9434b5b5fcc71280ebc40ca1b6b3706",
+  "git_dirty": false,
+  "params": {
+    "quick": false,
+    "n_boot": 1000,
+    "repeats": 5,
+    "folds": 5,
+    "seed": 42,
+    "Cs": [
+      0.1,
+      1,
+      10,
+      100
+    ],
+    "models": [
+      "majority",
+      "stratified",
+      "word",
+      "char",
+      "word_char"
+    ]
+  },
+  "versions": {
+    "python": "3.13.18",
+    "numpy": "2.5.3",
+    "pandas": "3.0.5",
+    "scikit-learn": "1.9.1"
+  }
+}

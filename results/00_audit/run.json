@@ -1,0 +1,22 @@
+{
+  "script": "scripts/s00_audit.py",
+  "timestamp_utc": "2026-11-16T07:18:24+00:00",
+  "git_commit": "0f7cab806eb0e5c07a0a1f70d5b79e01b98e3be7",
+  "git_dirty": false,
+  "params": {
+    "expected": {
+      "n_messages": 412,
+      "n_narrative": 148,
+      "n_shared": 103,
+      "n_channels_config": 98,
+      "n_sub_narratives": 380,
+      "n_channels_in_gold": 56
+    }
+  },
+  "versions": {
+    "python": "3.13.18",
+    "numpy": "2.5.3",
+    "pandas": "3.0.5",
+    "scikit-learn": "1.9.1"
+  }
+}

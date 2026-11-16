@@ -1,0 +1,23 @@
+{
+  "n_messages": 412,
+  "n_narrative": 148,
+  "share_narrative": 0.3592233009708738,
+  "n_channels": 56,
+  "share_forwarded": 0.08980582524271845,
+  "date_min": "2024-12-17",
+  "date_max": "2025-12-11",
+  "n_months": 13,
+  "per_month_full_min": 32,
+  "per_month_full_median": 35.0,
+  "per_month_full_max": 38,
+  "per_month_first_last": [
+    18,
+    12
+  ],
+  "text_len_median": 265.0,
+  "text_len_mean": 397.9101941747573,
+  "text_len_p90": 812.9000000000001,
+  "top1_channel_share": 0.08980582524271845,
+  "top5_channel_share": 0.3422330097087379,
+  "channels_with_ge5_messages": 24
+}
