@@ -95,23 +95,35 @@ cmd = [sys.executable, "-I", str(REPO / "scripts" / "s06_train.py"), "--raw-dir"
        "--emb-dir", str(EMB), "--out", str(OUT), "--models", "tfidf,bge_lr,xlmr", "--protocols", "P1,P2,P3",
        "--xlmr-protocols", XLMR_PROTOCOLS, "--seeds", str(SEEDS), "--epochs", "3", "--max-len", "128", "--batch-size", "32", "--lr", "2e-5"]
 t0 = time.time()
+code = None
 proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, cwd=str(REPO))
-for line in proc.stdout:
-    print(line, end="")
-code = proc.wait()
+try:
+    for line in proc.stdout:
+        print(line, end="")
+    code = proc.wait()
+except BaseException:  # перерив (Interrupt) або обрив: зупиняємо дочірній процес, щоб він не лишився працювати у фоні
+    proc.terminate()
+    proc.wait()
+    print("\\nЗапуск перервано, дочірній процес зупинено. Завершені одиниці збережено, запустіть цю клітинку знову.")
+    raise
 print(f"\\nКод завершення {code}, {time.time() - t0:.0f} с")
 '''
 
-CELL_PACK = '''# 6. Підсумок і архів
+CELL_PACK = '''# 6. Підсумок і архів (безпечно запускати і до завершення клітинки 5: тоді архів буде позначено як неповний)
 import shutil
 
 units = [json.loads(p.read_text(encoding="utf-8")) for p in sorted((OUT / "units").glob("*.json"))]
-print(f"Одиниць: {len(units)}")
+n_expected = 3 + 3 + len(XLMR_PROTOCOLS.split(",")) * SEEDS + 3  # tfidf, bge_lr (P1-P3), xlmr (протоколи x seed), три контролі з перемішаними мітками
+code = globals().get("code")
+complete = code == 0 and len(units) == n_expected
+print(f"Одиниць: {len(units)} з {n_expected}")
 for u in units:
     print(f"  {u['model']:12s} {u['protocol']} seed {u['seed']}  valid macro-F1 {u['valid_macro_f1']:.4f}  {u.get('seconds', 0):.0f} с")
-shutil.make_archive(str(OUT.parent / "06_text_models"), "zip", OUT)
-print("Архів:", OUT.parent / "06_text_models.zip")
-assert code == 0, "S6: запуск завершився з помилкою, див. вивід вище (завершені одиниці збережено, запустіть знову)"
+name = "06_text_models" if complete else "06_text_models_PARTIAL"
+shutil.make_archive(str(OUT.parent / name), "zip", OUT)
+print("Архів:", OUT.parent / f"{name}.zip")
+if not complete:
+    print("\\nУВАГА: запуск не завершено (код завершення:", code, "). Цей архів неповний, мені його поки не надсилайте: запустіть клітинку 5 знову.")
 '''
 
 
