@@ -94,7 +94,7 @@ def fig_flow(path, n_graph, n_ch, n_pool):
 
 
 def fig_shap_h2(path, gold, h2):
-    fig, (a1, a2) = plt.subplots(1, 2, figsize=(10.5, 4.0), gridspec_kw={"width_ratios": [1.15, 1]})
+    fig, (a1, a2) = plt.subplots(2, 1, figsize=(6.6, 4.6), gridspec_kw={"height_ratios": [1.1, 1]})
     s = pd.read_parquet(Q / "07_simple_hybrid" / "shap_gold_groups_lgbm_both.parquet").merge(gold[["key", "y", "lang"]], on="key")
     s = s[s["lang"] == "ru"]
     data, labs, cols = [], [], []
@@ -217,6 +217,10 @@ def main(argv=None) -> int:
 
     # --- 1
     set_paras(S(1).shapes[1], ["ПРОМІЖНИЙ ЗВІТ · МАГІСТЕРСЬКА РОБОТА · ЕТАП 2"])
+    t = S(1).shapes[4].text_frame.paragraphs[0].runs
+    t[0].text = t[0].text.replace("[група]", "Пмам-21")
+    for r in t[1:]:
+        r.text = r.text.replace("[група]", "Пмам-21")
     set_notes(S(1), "Привітання, назва теми. Одним реченням: робота про те, як поєднати аналіз тексту з аналізом того, як повідомлення поширюються мережею. "
                     "Це другий проміжний звіт: на відміну від першого (концепція і прототип на 412 золотих), тут уже є повний граф, навчання на слабких мітках і перевірка гіпотез H1 і H2. "
                     "Бюджет підбору гіперпараметрів і кількість seed вказано на слайдах з результатами; повні прогони з більшим бюджетом заплановані на наступний етап.")
@@ -268,7 +272,7 @@ def main(argv=None) -> int:
     s = S(11)
     shs = list(s.shapes)
     set_paras(shs[1], ["Повний граф: чотири типи ребер і охоплення золотих"])
-    replace_picture(s, shs[2], ROOT / "results" / "03_network" / "figures" / "01_network_map.png")
+    replace_picture(s, shs[2], ROOT / "results" / "quick" / "summary" / "figures" / "pptx_netmap_left.png")
     set_paras(shs[4], [["Вузли: ", f"{n_graph:_} повідомлень, {n_ch} каналів".replace("_", " ")],
                             ["Ребра: ", f"{n_fwd:_} форвардів, {n_sem:_} семантичних (cos ≥ 0,985, між каналами), {len(copub):_} ко-публікацій".replace("_", " ")],
                             ["Охоплення золотих ", "(чи торкаються їх ребра):"],
@@ -330,6 +334,7 @@ def main(argv=None) -> int:
     p13 = FIGDIR / "shap_h2.png"
     fig_shap_h2(p13, gold, h2)
     set_paras(shs[1], ["Внесок графа: SHAP і абляції (H2)"])
+    shs[2].height = Emu(int(4.5 * 914400))
     replace_picture(s, shs[2], p13)
     tbl = [sh for sh in s.shapes if getattr(sh, "has_table", False) and sh.has_table][0].table
     hdr = ["Варіант (ru)", "macro-F1", "MCC"]
@@ -362,7 +367,22 @@ def main(argv=None) -> int:
     cd.categories = [names[m] for m in ms]
     cd.add_series("явні", [round(float(rec[(rec.model == m) & (rec.group == "явні")]["recall"].iloc[0]), 3) for m in ms])
     cd.add_series("неявні", [round(float(rec[(rec.model == m) & (rec.group == "неявні")]["recall"].iloc[0]), 3) for m in ms])
-    [sh for sh in s.shapes if getattr(sh, "has_chart", False) and sh.has_chart][0].chart.replace_data(cd)
+    cd.add_series("ненаративні (специфічність)", [round(float(rec[(rec.model == m) & (rec.group == "ненаративні")]["recall"].iloc[0]), 3) for m in ms])
+    ch14 = [sh for sh in s.shapes if getattr(sh, "has_chart", False) and sh.has_chart][0].chart
+    ch14.replace_data(cd)
+    from pptx.dml.color import RGBColor
+
+    fill = ch14.plots[0].series[2].format.fill
+    fill.solid()
+    fill.fore_color.rgb = RGBColor(0x2E, 0x7D, 0x50)
+    try:
+        ch14.value_axis.axis_title.text_frame.text = "частка правильних відповідей при порозі 0,5"
+        from pptx.util import Pt
+
+        ch14.value_axis.axis_title.text_frame.paragraphs[0].runs[0].font.size = Pt(11)
+        ch14.value_axis.axis_title.text_frame.paragraphs[0].runs[0].font.bold = False
+    except Exception:
+        pass
     h1 = pd.read_csv(Q / "07_simple_hybrid" / "h1_preliminary.csv")
     h = h1[(h1["protocol"] == "P1") & (h1["definition"] == "a")].iloc[0]
     spec = rec[(rec.group == "ненаративні") & rec.model.isin(ms)].set_index("model")["recall"]
