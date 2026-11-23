@@ -26,24 +26,35 @@ from narr.evaluate import binary_metrics  # noqa: E402
 from narr.io import ROOT, write_run_json  # noqa: E402
 from narr.splits import make_key  # noqa: E402
 
-THR = {"h2_sem975": 0.975, "h2_sem985": 0.985, "h2_sem990": 0.99}
+THR = {}  # заповнюється за --arch
 
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--dir", default=str(ROOT / "results" / "quick" / "08_gnn_h2"))
+    ap.add_argument("--dir", action="append", default=None, help="папки з прогнозами (можна кілька)")
+    ap.add_argument("--out", default=None)
+    ap.add_argument("--arch", default=None, help="sage|rgcn|hgt: повна модель; без аргументу: старий швидкий варіант h2_*")
     ap.add_argument("--n-boot", type=int, default=1000)
     ap.add_argument("--seed", type=int, default=42)
     args = ap.parse_args(argv)
-    d = Path(args.dir)
-    pred = pd.concat([pd.read_parquet(p) for p in sorted((d / "predictions").glob("*.parquet"))], ignore_index=True)
+    dirs = [Path(x) for x in (args.dir or [str(ROOT / "results" / "quick" / "08_gnn_h2")])]
+    d = Path(args.out) if args.out else dirs[0]
+    d.mkdir(parents=True, exist_ok=True)
+    pred = pd.concat([pd.read_parquet(p) for dd in dirs for p in sorted((dd / "predictions").glob("*.parquet"))], ignore_index=True)
+    if args.arch:
+        a = args.arch
+        THR.update({f"{a}_sem975": 0.975, f"{a}_full": 0.985, f"{a}_sem990": 0.99})
+        MAIN, NOSEM, NOFWD = f"{a}_full", f"{a}_nosem", f"{a}_nofwd"
+    else:
+        THR.update({"h2_sem975": 0.975, "h2_sem985": 0.985, "h2_sem990": 0.99})
+        MAIN, NOSEM, NOFWD = "h2_sem985", "h2_nosem", "h2_nofwd"
     s5 = ROOT / "results" / "05_protocol"
     g = te.make_gold_table(pd.read_csv(s5 / "gold_membership.csv"), pd.read_csv(s5 / "implicit_labeling.csv"), pd.read_csv(s5 / "implicit_auto_b.csv"))
     pm = te.mean_over_seeds(pred)
     n_seeds = int(pred.groupby("model")["seed"].nunique().min())
 
     rows = []
-    pairs = [(m, "h2_nosem") for m in THR] + [("h2_sem985", "h2_nofwd")]
+    pairs = [(m, NOSEM) for m in THR] + [(MAIN, NOFWD)]
     for a, b in pairs:
         t = te.paired_table(pm, g, "P1", [(a, b)], ["all", "ru"], args.n_boot, args.seed)
         t = t[t["metric"].isin(["macro_f1", "mcc"])]
@@ -69,8 +80,8 @@ def main(argv=None) -> int:
     per_seed.to_csv(d / "h2_per_seed.csv", index=False)
 
     # критерій H2
-    mf = diffs[(diffs["metric"] == "macro_f1") & (diffs["B"] == "h2_nosem") & (diffs["slice"] == "ru")].set_index("A")
-    main = mf.loc["h2_sem985"]
+    mf = diffs[(diffs["metric"] == "macro_f1") & (diffs["B"] == NOSEM) & (diffs["slice"] == "ru")].set_index("A")
+    main = mf.loc[MAIN]
     sign_ok = all(float(mf.loc[m, "diff"]) > 0 for m in THR if m in mf.index)
     confirmed = bool(float(main["diff"]) > 0 and float(main["ci_lo"]) > 0 and sign_ok)
     verdict = {"confirmed_before_holm": confirmed, "main_diff_macro_f1_ru": float(main["diff"]), "ci": [float(main["ci_lo"]), float(main["ci_hi"])],
@@ -100,7 +111,7 @@ def main(argv=None) -> int:
     # рисунок
     fig, axes = plt.subplots(1, 2, figsize=(10.5, 4.2), sharey=True)
     for ax, sl, title in zip(axes, ("ru", "all"), ("російськомовні (199)", "усі 412")):
-        sub = diffs[(diffs["metric"] == "macro_f1") & (diffs["B"] == "h2_nosem") & (diffs["slice"] == sl)]
+        sub = diffs[(diffs["metric"] == "macro_f1") & (diffs["B"] == NOSEM) & (diffs["slice"] == sl)]
         xs = np.arange(len(sub))
         ax.errorbar(xs, sub["diff"], yerr=[sub["diff"] - sub["ci_lo"], sub["ci_hi"] - sub["diff"]], fmt="o", color="#2e8b57", capsize=5, lw=2)
         ax.axhline(0, color="k", lw=1)
@@ -114,6 +125,18 @@ def main(argv=None) -> int:
     (d / "figures").mkdir(exist_ok=True)
     fig.savefig(d / "figures" / "h2_diffs.png", dpi=150)
     plt.close(fig)
+    if args.arch:
+        names = {f"{args.arch}_full": "Повна модель", f"{args.arch}_nosem": "без семантичних ребер", f"{args.arch}_nofwd": "без форвардів",
+                 f"{args.arch}_nocopub": "без ко-публікації", f"{args.arch}_notext": "без тексту вузлів"}
+        rows = []
+        for m, nm in names.items():
+            if m not in set(pm["model"]):
+                continue
+            dm = g.merge(pm[pm["model"] == m][["key", "p"]], on="key")
+            mk = te.slice_mask(dm, "ru")
+            r = binary_metrics(dm["y"].to_numpy()[mk], dm["p"].to_numpy()[mk])
+            rows.append({"model": m, "name": nm, "f1": r["macro_f1"], "mcc": r["mcc"], "pr_auc": r["pr_auc"]})
+        pd.DataFrame(rows).to_csv(d / "ablation_table.csv", index=False)
     write_run_json(d, "scripts/s08_h2_eval.py", {"n_boot": args.n_boot, "seed": args.seed, "verdict": verdict})
     print(json.dumps(verdict, ensure_ascii=False))
     print(pd.DataFrame(cov).to_string())

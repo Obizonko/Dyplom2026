@@ -1,15 +1,16 @@
 {
   "script": "scripts/quick_summary.py",
-  "timestamp_utc": "2026-11-23T15:55:44+00:00",
-  "git_commit": "203972dc88cc4649adb8f4e109dcc4b2a88d6ff8",
-  "git_dirty": false,
+  "timestamp_utc": "2026-11-23T16:25:12+00:00",
+  "git_commit": "1adfdf11846f1a2070ae5a68e962a7c54b58b30a",
+  "git_dirty": true,
   "params": {
     "n_boot": 1000,
     "seed": 42,
     "sources": {
       "text": "results\\06_text_models",
       "hybrid": "results\\quick\\07_simple_hybrid",
-      "gnn": "results\\quick\\08_gnn"
+      "gnn": "results\\quick\\08_gnn",
+      "gnn_h2": "results\\quick\\08_gnn_h2"
     },
     "models": [
       "majority",
@@ -22,9 +23,10 @@
       "lgbm_graph_noprior",
       "gnn_sage_notext",
       "gnn_sage",
+      "h2_sem985",
       "lgbm_both"
     ],
-    "seconds": 65
+    "seconds": 70
   },
   "versions": {
     "python": "3.13.11",

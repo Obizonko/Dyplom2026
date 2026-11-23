@@ -52,6 +52,7 @@ def main(argv=None) -> int:
     ap.add_argument("--epochs", type=int, default=12)
     ap.add_argument("--hidden", type=int, default=128)
     ap.add_argument("--sanity", action="store_true")
+    ap.add_argument("--arch", default="sage", choices=["sage", "rgcn", "hgt"], help="для --sanity")
     ap.add_argument("--variants", default="gnn_sage,gnn_sage_notext",
                     help="gnn_sage, gnn_sage_notext (швидкий режим) або H2: h2_nosem, h2_sem975, h2_sem985, h2_sem990, h2_nofwd")
     ap.add_argument("--fwd", default=str(ROOT / "data" / "raw" / "extracted" / "parquet_set" / "forward_edges.parquet"))
@@ -76,7 +77,7 @@ def main(argv=None) -> int:
         y = np.zeros(len(keys), dtype=np.int64)
         y[idx] = sub["weak_narrative"].astype(int).to_numpy()
         data = gnn.build_graph(E, msg_channel, pairs, chan_ids, cf, text=True)
-        r = gnn.train_gnn(data, y, idx, idx, {"train": idx}, seed=0, epochs=60, hidden=args.hidden, batch_size=32, patience=60, log=lambda *_: None)
+        r = gnn.train_gnn(data, y, idx, idx, {"train": idx}, seed=0, epochs=60, hidden=args.hidden, batch_size=32, patience=60, arch=args.arch, log=lambda *_: None)
         h = r["history"]
         print(f"САНІТІ: втрата {h[0]['train_loss']:.4f} -> {h[-1]['train_loss']:.4f}; valid(=train) macro-F1 {r['valid_macro_f1']:.3f} на епосі {r['epoch']}")
         assert h[-1]["train_loss"] < 0.05 and r["valid_macro_f1"] > 0.99, "перенавчання на 32 прикладах не вдалося"
@@ -91,7 +92,7 @@ def main(argv=None) -> int:
         for part in ("train", "test"):
             s[part]["text_hash"] = s[part]["key"].map(th_map)
     fwd = None
-    if any(v.startswith("h2_") and v != "h2_nofwd" for v in args.variants.split(",")):
+    if any((v.startswith("h2_") and v != "h2_nofwd") or (v.split("_")[0] in ("sage", "rgcn", "hgt") and v.split("_")[-1] != "nofwd") for v in args.variants.split(",")):
         import pyarrow.parquet as pq
 
         fe = pq.read_table(args.fwd, columns=["logical_src_channel_id", "logical_src_message_id", "logical_dst_channel_id", "logical_dst_message_id"]).to_pandas()
@@ -100,14 +101,35 @@ def main(argv=None) -> int:
         fwd = pd.DataFrame({"src": row.loc[ks[ok]].to_numpy(), "dst": row.loc[kd[ok]].to_numpy()})
         fwd = fwd[fwd["src"] != fwd["dst"]].drop_duplicates()
         print(f"Форвард-ребра: {len(fe)} у наборі, обидва кінці в наборі ембедингів {int(ok.sum())}, унікальних без петель {len(fwd)}", flush=True)
+    cp_path = ROOT / "data" / "interim" / "features" / "copub_pairs.parquet"
+    if any(v.split("_")[0] in ("sage", "rgcn", "hgt") and v.split("_")[-1] != "nocopub" for v in args.variants.split(",")):
+        if cp_path.exists():
+            copub = pd.read_parquet(cp_path)
+        else:
+            copub = ft.copublication_pairs(index["date_utc"], index["channel_id"].to_numpy())
+            cp_path.parent.mkdir(parents=True, exist_ok=True)
+            copub.to_parquet(cp_path, index=False)
+        print(f"co_publication: {len(copub)} пар (вікно 1 год, різні канали, до 10 на вузол)", flush=True)
+    else:
+        copub = None
     SPECS = {"gnn_sage": dict(text=True, thr=0.985, fwd=False), "gnn_sage_notext": dict(text=False, thr=0.985, fwd=False),
              "h2_nosem": dict(text=True, thr=None, fwd=True), "h2_sem975": dict(text=True, thr=0.975, fwd=True),
              "h2_sem985": dict(text=True, thr=0.985, fwd=True), "h2_sem990": dict(text=True, thr=0.99, fwd=True),
              "h2_nofwd": dict(text=True, thr=0.985, fwd=False)}
+    def spec_of(variant: str) -> dict:
+        """sage|rgcn|hgt + _full|_nosem|_sem975|_sem990|_nofwd|_nocopub|_notext: повний граф (cos 0,985, форварди, co_publication, текст) з однією зміною."""
+        if variant in SPECS:
+            return {**SPECS[variant], "arch": "sage", "copub": False}
+        arch, _, suf = variant.partition("_")
+        sp = dict(text=True, thr=0.985, fwd=True, copub=True, arch=arch)
+        sp.update({"full": {}, "nosem": {"thr": None}, "sem975": {"thr": 0.975}, "sem990": {"thr": 0.99}, "nofwd": {"fwd": False},
+                   "nocopub": {"copub": False}, "notext": {"text": False}}[suf])
+        return sp
+
     for variant in args.variants.split(","):
-        sp = SPECS[variant]
+        sp = spec_of(variant)
         pr_v = None if sp["thr"] is None else pairs[pairs["cos"] >= sp["thr"] - 1e-9]
-        data = gnn.build_graph(E, msg_channel, pr_v, chan_ids, cf, text=sp["text"], fwd=fwd if sp["fwd"] else None)
+        data = gnn.build_graph(E, msg_channel, pr_v, chan_ids, cf, text=sp["text"], fwd=fwd if sp["fwd"] else None, copub=copub if sp["copub"] else None)
         print(f"Граф {variant}: семантичних пар {0 if pr_v is None else len(pr_v)}, форвардів {len(fwd) if sp['fwd'] else 0}", flush=True)
         for pr in protocols:
             for sd in range(args.seeds):
@@ -126,7 +148,7 @@ def main(argv=None) -> int:
                     ti = row.loc[tr["key"]].to_numpy()
                     y[ti] = tr["weak_narrative"].astype(int).to_numpy()
                     te_idx = row.loc[te["key"]].to_numpy()
-                    r = gnn.train_gnn(data, y, ti[m_tr.to_numpy()], ti[m_va.to_numpy()], {"test": te_idx}, seed=sd, epochs=args.epochs, hidden=args.hidden)
+                    r = gnn.train_gnn(data, y, ti[m_tr.to_numpy()], ti[m_va.to_numpy()], {"test": te_idx}, seed=sd, epochs=args.epochs, hidden=args.hidden, arch=sp["arch"])
                     ids, p = r["probs"]["test"]
                     pm_ = pd.Series(p, index=ids).loc[te_idx].to_numpy()
                     preds.append(pd.DataFrame({"protocol": pr, "fold": s["fold"], "model": variant, "seed": sd, "channel_id": te["channel_id"].to_numpy(),

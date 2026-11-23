@@ -16,7 +16,7 @@ from narr.evaluate import binary_metrics
 
 
 def build_graph(emb: np.ndarray | None, msg_channel: np.ndarray, pairs: pd.DataFrame | None, chan_ids: np.ndarray, chan_feat: np.ndarray,
-                text: bool = True, fwd: pd.DataFrame | None = None):
+                text: bool = True, fwd: pd.DataFrame | None = None, copub: pd.DataFrame | None = None):
     """HeteroData. msg_channel: channel_id кожного вузла msg; chan_ids: порядок вузлів chan; chan_feat: (n_chan, d) стандартизовані ознаки."""
     import torch
     from torch_geometric.data import HeteroData
@@ -36,6 +36,9 @@ def build_graph(emb: np.ndarray | None, msg_channel: np.ndarray, pairs: pd.DataF
         fe = torch.as_tensor(np.vstack([fwd["src"].to_numpy(), fwd["dst"].to_numpy()]), dtype=torch.long)
         d["msg", "fwd", "msg"].edge_index = fe
         d["msg", "rev_fwd", "msg"].edge_index = fe.flip(0)
+    if copub is not None and len(copub):  # co_publication: різні канали, різниця часу в межах вікна; неспрямовані
+        i, j = copub["i"].to_numpy(), copub["j"].to_numpy()
+        d["msg", "copub", "msg"].edge_index = torch.as_tensor(np.vstack([np.concatenate([i, j]), np.concatenate([j, i])]), dtype=torch.long)
     cmap = pd.Series(np.arange(len(chan_ids)), index=chan_ids)
     c = cmap.loc[msg_channel].to_numpy()
     pub = torch.as_tensor(np.vstack([np.arange(n), c]), dtype=torch.long)
@@ -44,19 +47,26 @@ def build_graph(emb: np.ndarray | None, msg_channel: np.ndarray, pairs: pd.DataF
     return d
 
 
-def make_model(in_msg: int, in_chan: int, hidden: int = 128, dropout: float = 0.3, text_dropout: float = 0.0, msg_relations=("sem",)):
+def make_model(in_msg: int, in_chan: int, hidden: int = 128, dropout: float = 0.3, text_dropout: float = 0.0, msg_relations=("sem",),
+               arch: str = "sage", metadata=None):
+    """arch: sage (GraphSAGE), rgcn (R-GCN: власна матриця на відношення, середнє по сусідах, окрема матриця самоз'єднання), hgt (Heterogeneous Graph Transformer)."""
     import torch
     from torch import nn
-    from torch_geometric.nn import HeteroConv, SAGEConv
+    from torch_geometric.nn import HeteroConv, HGTConv, SAGEConv
 
     class Net(nn.Module):
         def __init__(self):
             super().__init__()
             self.lin_m, self.lin_c = nn.Linear(in_msg, hidden), nn.Linear(in_chan, hidden)
-            rels = {("msg", r, "msg"): SAGEConv(hidden, hidden) for r in msg_relations}
-            rels.update({("msg", "pub", "chan"): SAGEConv(hidden, hidden), ("chan", "rev_pub", "msg"): SAGEConv(hidden, hidden)})
-            mk = lambda: HeteroConv({k: SAGEConv(hidden, hidden) for k in rels}, aggr="sum")
-            self.c1, self.c2 = mk(), mk()
+            rel_keys = [("msg", r, "msg") for r in msg_relations] + [("msg", "pub", "chan"), ("chan", "rev_pub", "msg")]
+            if arch == "hgt":
+                mk = lambda: HGTConv(hidden, hidden, metadata, heads=4)
+            elif arch == "rgcn":
+                mk = lambda: HeteroConv({k: SAGEConv(hidden, hidden, aggr="mean", root_weight=False) for k in rel_keys}, aggr="sum")
+                self.self_lins = nn.ModuleList([nn.ModuleDict({"msg": nn.Linear(hidden, hidden, bias=False), "chan": nn.Linear(hidden, hidden, bias=False)}) for _ in range(2)])
+            else:
+                mk = lambda: HeteroConv({k: SAGEConv(hidden, hidden) for k in rel_keys}, aggr="sum")
+            self.convs = nn.ModuleList([mk(), mk()])
             self.out = nn.Linear(hidden, 2)
             self.dp = nn.Dropout(dropout)
             self.text_dropout = text_dropout
@@ -66,9 +76,12 @@ def make_model(in_msg: int, in_chan: int, hidden: int = 128, dropout: float = 0.
             if self.training and self.text_dropout > 0:  # modality dropout для ознак повідомлення
                 xm = xm * (torch.rand(xm.shape[0], 1, device=xm.device) > self.text_dropout).float()
             h = {"msg": torch.relu(self.lin_m(xm)), "chan": torch.relu(self.lin_c(x_dict["chan"]))}
-            for conv in (self.c1, self.c2):
+            for li, conv in enumerate(self.convs):
                 new = conv(h, ei_dict)
-                h = {k: self.dp(torch.relu(new.get(k, h[k]) + h[k])) for k in h}  # залишкове з'єднання
+                if arch == "rgcn":
+                    h = {k: self.dp(torch.relu((new[k] if new.get(k) is not None else 0) + self.self_lins[li][k](h[k]))) for k in h}
+                else:  # sage, hgt: залишкове з'єднання
+                    h = {k: self.dp(torch.relu((new[k] if new.get(k) is not None else h[k]) + h[k])) for k in h}
             return self.out(h["msg"])
 
     return Net()
@@ -95,7 +108,7 @@ def predict(model, loader, device) -> tuple[np.ndarray, np.ndarray]:
 
 
 def train_gnn(data, y_all: np.ndarray, train_idx: np.ndarray, valid_idx: np.ndarray, eval_idx: dict[str, np.ndarray], *, seed: int, epochs: int = 12,
-              hidden: int = 128, lr: float = 2e-3, batch_size: int = 2048, num_neighbors=(15, 10), patience: int = 4, text_dropout: float = 0.0,
+              hidden: int = 128, lr: float = 2e-3, batch_size: int = 2048, num_neighbors=(15, 10), patience: int = 4, text_dropout: float = 0.0, arch: str = "sage",
               device: str | None = None, log=print) -> dict:
     """Навчання з вибором епохи за valid macro-F1 (слабкі мітки). Повертає ймовірності для eval_idx з найкращої епохи."""
     import torch
@@ -112,7 +125,7 @@ def train_gnn(data, y_all: np.ndarray, train_idx: np.ndarray, valid_idx: np.ndar
     va_loader = mk(valid_idx, False)
     ev_loaders = {k: mk(v, False) for k, v in eval_idx.items()}
     msg_rel = [et[1] for et in data.edge_types if et[0] == "msg" and et[2] == "msg"]
-    model = make_model(data["msg"].x.shape[1], data["chan"].x.shape[1], hidden, text_dropout=text_dropout, msg_relations=msg_rel).to(dev)
+    model = make_model(data["msg"].x.shape[1], data["chan"].x.shape[1], hidden, text_dropout=text_dropout, msg_relations=msg_rel, arch=arch, metadata=data.metadata()).to(dev)
     opt = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
     w = torch.as_tensor(class_weights(y_all[train_idx]), device=dev)
     best = {"valid_macro_f1": -1.0, "epoch": -1, "probs": {}}

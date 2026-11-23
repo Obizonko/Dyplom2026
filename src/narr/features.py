@@ -166,3 +166,23 @@ def semantic_pairs(emb: np.ndarray, channel_id: np.ndarray, threshold: float = S
             qi, ji, c = qi[k2], ji[k2], c[k2]
         rows.append(pd.DataFrame({"i": qi, "j": ji, "cos": c}))
     return pd.concat(rows, ignore_index=True) if rows else pd.DataFrame({"i": [], "j": [], "cos": []})
+
+
+def copublication_pairs(date: pd.Series, channel_id: np.ndarray, window_h: float = 1.0, max_offset: int = 30, k: int = 10) -> pd.DataFrame:
+    """Ребра co_publication: повідомлення різних каналів, опубліковані в межах window_h годин одне від одного.
+    Щоб не отримати мільйони пар у години піку, кожне повідомлення з'єднується не більше ніж з k наступними (за часом) повідомленнями
+    інших каналів серед max_offset сусідів у впорядкуванні за часом. Повертає унікальні неспрямовані пари i < j (індекси початкового порядку), колонку dt_h."""
+    t = (pd.to_datetime(date, utc=True, errors="coerce") - pd.Timestamp("2024-01-01", tz="UTC")).dt.total_seconds().to_numpy() / 3600.0
+    ok = np.flatnonzero(~np.isnan(t))
+    o = ok[np.argsort(t[ok], kind="stable")]
+    ts, cs = t[o], np.asarray(channel_id)[o]
+    rows = []
+    for d in range(1, max_offset + 1):
+        a, b = np.arange(0, len(o) - d), np.arange(d, len(o))
+        m = (ts[b] - ts[a] <= window_h) & (cs[a] != cs[b])
+        rows.append(pd.DataFrame({"a": a[m], "b": b[m], "d": d}))
+    p = pd.concat(rows, ignore_index=True).sort_values(["a", "d"])
+    p = p.groupby("a", sort=False).head(k)
+    i, j = o[p["a"].to_numpy()], o[p["b"].to_numpy()]
+    out = pd.DataFrame({"i": np.minimum(i, j), "j": np.maximum(i, j), "dt_h": (ts[p["b"].to_numpy()] - ts[p["a"].to_numpy()])})
+    return out.drop_duplicates(["i", "j"]).reset_index(drop=True)

@@ -24,11 +24,11 @@ from narr import text_eval as te, textmodels as tm  # noqa: E402
 from narr.io import ROOT, write_run_json  # noqa: E402
 
 SOURCES = {"text": ROOT / "results" / "06_text_models", "xlmr": ROOT / "results" / "quick" / "06_xlmr",
-           "hybrid": ROOT / "results" / "quick" / "07_simple_hybrid", "gnn": ROOT / "results" / "quick" / "08_gnn"}
+           "hybrid": ROOT / "results" / "quick" / "07_simple_hybrid", "gnn": ROOT / "results" / "quick" / "08_gnn", "gnn_h2": ROOT / "results" / "quick" / "08_gnn_h2"}
 ORDER = [("majority", "мажоритарний", "k"), ("lang_rule", "правило «російська = наратив»", "k"), ("channel_prior", "канальний пріор", "k"),
          ("tfidf", "TF-IDF + LogReg", "t"), ("bge_lr", "bge-m3 + LogReg", "t"), ("xlmr", "XLM-R (зменшений бюджет)", "t"),
          ("lgbm_emb", "LightGBM: ембединги", "t"), ("lgbm_graph", "LightGBM: лише граф", "g"), ("lgbm_graph_noprior", "LightGBM: граф без пріору", "g"),
-         ("gnn_sage_notext", "GraphSAGE без тексту", "g"), ("gnn_sage", "GraphSAGE з текстом", "h"), ("lgbm_both", "LightGBM: ембединги + граф", "h")]
+         ("gnn_sage_notext", "GraphSAGE без тексту", "g"), ("gnn_sage", "GraphSAGE з текстом", "h"), ("h2_sem985", "GraphSAGE + форварди", "h"), ("lgbm_both", "LightGBM: ембединги + граф", "h")]
 COLORS = {"k": "#8c8c8c", "t": "#2a6fb0", "g": "#d9822b", "h": "#2e8b57"}
 
 
