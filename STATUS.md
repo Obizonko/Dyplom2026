@@ -1,6 +1,6 @@
 # Статус виконання плану
 
-Оновлено: 23.11.2026 (перехід на локальний ноутбук); раніше 16.11.2026 (S4 і S5 виконано, преєстрація v1 зафіксована комітом 1d5fa0f; S6 Colab: код і ноутбук готові, чекаємо запуск). План: `plan/PLAN_vykonannya.md` (копія є і в Project «Dyplom»).
+Оновлено: 23.11.2026 (перехід на локальний ноутбук, швидкі S7, S8, прототип S12, попередній звіт); раніше 16.11.2026 (S4 і S5 виконано, преєстрація v1 зафіксована комітом 1d5fa0f; S6 Colab: код і ноутбук готові, чекаємо запуск). План: `plan/PLAN_vykonannya.md` (копія є і в Project «Dyplom»).
 
 ## Чекліст етапів
 
@@ -14,7 +14,12 @@
 | S4. Семантичний шар | виконано: Colab (bge-m3, hnswlib, UMAP) відпрацював, 9 з 10 перевірок пройдено (6 жорстких пройдено, одна м'яка не пройдена: оцінки набору не відтворюються за рангами, спірмен 0,559 на нетривіальних парах), 50 пар біля порогу переглянуто (копій 19, серійних шаблонів 31), розбіжність 730 пояснена самопересиланнями | `reports/04_semantic.md`, `results/04_semantic/`, `src/narr/semantic.py`, `scripts/s04_semantic.py`, `scripts/s04_render_report.py`, `colab/04_semantic.ipynb` |
 | S5. Протокол і преєстрація | виконано: спліти P1-P3 побудовано (37 перевірок, жорстких не пройдено 0), розмітка «явний / неявний» (а) виконана Claude на прохання користувача (явних 70, неявних 66, неясних 12), преєстрація v1 зафіксована окремим комітом 1d5fa0f. Зовнішня перевірка розмітки (20 рядків) за бажанням користувача | `src/narr/splits.py`, `scripts/s05_splits.py`, `scripts/s05_render_report.py`, `tests/test_splits*.py`, `tests/test_leakage.py`, `tests/test_implicit_labels.py`, `configs/prereg.md`, `results/05_protocol/`, `splits/`, `reports/05_protocol.md` |
 | S6 (Colab): TF-IDF, ембединги bge-m3 + LogReg, XLM-R на слабких мітках, оцінка на золотих | код і ноутбук готові (коміт ebd1535, 112 тестів, цикл XLM-R перевірено на крихітній моделі), очікує запуску користувача в Colab; звіт `reports/06_text_models.md` після повернення результатів | `src/narr/textmodels.py`, `src/narr/xlmr.py`, `src/narr/text_eval.py`, `scripts/s06_train.py`, `scripts/s06_eval.py`, `colab/06_text_models.ipynb`, `colab/build_06_text_models.py`, `tests/test_s06_pipeline.py`, `tests/test_text_eval.py`, `tests/test_xlmr.py` |
-| S7-S14 | не розпочато | |
+| S6 (локально, частково) | TF-IDF і bge-m3 + LogReg для P1-P3 з контролями пораховано локально (`results/06_text_models/`); XLM-R запущено лише в dev (код і заморожені словникові ембединги перевірено), повний прогін і `reports/06_text_models.md` ще попереду | `results/06_text_models/`, `scripts/s06_train.py` |
+| S7 (швидкий режим) | LightGBM граф / граф без пріору / ембединги / обидва, P1 і P2, 20 спроб Optuna, контролі (перемішані мітки, перезв'язана мережа), SHAP, попередня H1: критерій не виконано. Повний режим (50 спроб, 5 seed, P3) ще попереду | `src/narr/features.py`, `src/narr/hybrid.py`, `scripts/s07_run.py`, `scripts/s07_eval.py`, `results/quick/07_simple_hybrid/` |
+| S8 (швидкий режим) | GraphSAGE на гетерографі (семантичні ребра між каналами + публікація), з текстом і без, P1, 3 seed; перенавчання на 32 прикладах пройшло. Форвардів повідомлень, co_publication, R-GCN, HGT немає | `src/narr/gnn.py`, `scripts/s08_run.py`, `results/quick/08_gnn/` |
+| S12 (прототип) | Streamlit на збережених прогнозах (швидкий режим) | `app/streamlit_app.py`, `scripts/s12_prepare.py` |
+| Попередній звіт | зведення S6-S8 з рисунками, пояснення для диплому | `reports/quick_report.md`, `reports/quick_report.html`, `reports/quick_summary.md`, `results/quick/summary/` |
+| S9-S14 | не розпочато | |
 
 ## Ключові знахідки
 
@@ -52,6 +57,8 @@
 
 ## Відхилення від плану
 
+- 23.11.2026: швидкий режим для презентації (`results/quick/`): LightGBM 20 спроб Optuna замість 50, пошук на підвибірці 20 тис., 1 seed, без P3; GraphSAGE без форвардів повідомлень і co_publication; XLM-R у швидкому режимі не запускався (зупинено за рішенням користувача). Висновків за H1-H3 це не дає: попередня H1 (гібрид проти TF-IDF, російськомовний зріз, неявні) критерій не виконує, H2 і H3 не перевірялись. Розділ 11 преєстрації не потрібен: відхилення стосуються бюджету запусків, а не критеріїв.
+- 23.11.2026: контроль із перемішаними мітками для TF-IDF формально не пройдено (MCC −0,110 [−0,202; −0,018], ДІ не включає 0), причину не з'ясовано; записано в `reports/quick_report.md`.
 - 23.11.2026: S6 XLM-R на RTX 3060 (6 ГБ VRAM): словникові ембединги заморожено (`freeze_word_embeddings`, 192 млн з 278 млн параметрів, навчається 86 млн), fp16 autocast, batch 16, max-len 128. Без заморожування OOM на backward. Це деталь реалізації, піде у звіт S6. `load_texts` читає `telegram_messages.parquet` порціями (повне читання тримало ~2 ГБ RAM, і CUDA падала з випадковими помилками ініціалізації).
 - 23.11.2026: роботу перенесено на локальний ноутбук (Windows 11, Ryzen 5 5600H, RTX 3060 Laptop 6 ГБ VRAM, ~14 ГБ RAM, один диск C: з ~22 ГБ вільних). Усі етапи, зокрема GPU, тепер запускаються локально скриптами `scripts/*.py`, ноутбуки `colab/*.ipynb` не використовуються. Середовище: `.venv` (Python 3.13.11 через uv, torch 2.11.0+cu128, PyG 2.8.1 з pyg-lib, NeighborLoader перевірено). Версії в `requirements.txt` оновлено (додано torch, transformers, sentence-transformers, lightgbm, optuna, shap, streamlit, PyG).
 - 23.11.2026: `hnswlib` на Windows без MSVC Build Tools не збирається (колеса немає). Тести з hnswlib пропускаються, семантичні сусіди на цьому ноутбуці рахуватимуться точним пошуком на GPU (або в Linux-середовищі з hnswlib); якщо так буде, це записується у відповідному звіті.

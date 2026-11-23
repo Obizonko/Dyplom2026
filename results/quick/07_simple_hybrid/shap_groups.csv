@@ -1,0 +1,6 @@
+model,group,mean_abs_shap_gold
+lgbm_both,graph,2.1710501438249055
+lgbm_both,text,8.21893671978355
+lgbm_emb,text,9.168776992911075
+lgbm_graph,graph,2.728489274919947
+lgbm_graph_noprior,graph,2.6580180735001093

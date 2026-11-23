@@ -1,0 +1,75 @@
+{
+ "args": {
+  "selftest": false,
+  "raw_dir": "data/raw",
+  "splits_dir": "splits",
+  "emb_dir": "data/interim/embeddings",
+  "out": "results/06_text_models",
+  "models": "tfidf,bge_lr",
+  "protocols": "P1,P2,P3",
+  "xlmr_protocols": "P1,P2",
+  "seeds": 3,
+  "epochs": 3,
+  "max_len": 128,
+  "batch_size": 32,
+  "lr": 2e-05,
+  "model_name": "xlm-roberta-base",
+  "unfreeze_embeddings": false,
+  "no_controls": false,
+  "limit": 0
+ },
+ "integrity": {
+  "n_keys": 81944,
+  "n_in_index": 81944,
+  "n_mismatch": 0,
+  "ok": true
+ },
+ "n_units": 8,
+ "seconds_total": 417.7,
+ "gpu": "NVIDIA GeForce RTX 3060 Laptop GPU",
+ "torch": "2.11.0+cu128",
+ "split_sizes": [
+  {
+   "protocol": "P1",
+   "fold": 0,
+   "n_train": 81532,
+   "n_test": 412
+  },
+  {
+   "protocol": "P2",
+   "fold": 0,
+   "n_train": 53664,
+   "n_test": 116
+  },
+  {
+   "protocol": "P3",
+   "fold": 1,
+   "n_train": 79593,
+   "n_test": 90
+  },
+  {
+   "protocol": "P3",
+   "fold": 2,
+   "n_train": 75894,
+   "n_test": 81
+  },
+  {
+   "protocol": "P3",
+   "fold": 3,
+   "n_train": 78526,
+   "n_test": 80
+  },
+  {
+   "protocol": "P3",
+   "fold": 4,
+   "n_train": 77649,
+   "n_test": 82
+  },
+  {
+   "protocol": "P3",
+   "fold": 5,
+   "n_train": 79217,
+   "n_test": 79
+  }
+ ]
+}

@@ -1,0 +1,28 @@
+{
+  "script": "scripts/s08_run.py",
+  "timestamp_utc": "2026-11-23T15:33:40+00:00",
+  "git_commit": "203972dc88cc4649adb8f4e109dcc4b2a88d6ff8",
+  "git_dirty": false,
+  "params": {
+    "args": {
+      "emb_dir": "C:\\University\\Диплом\\data\\interim\\embeddings",
+      "splits_dir": "C:\\University\\Диплом\\splits",
+      "out": "results/quick/08_gnn",
+      "protocols": "P1",
+      "seeds": 3,
+      "epochs": 30,
+      "hidden": 128,
+      "sanity": false,
+      "variants": "gnn_sage,gnn_sage_notext"
+    },
+    "n_semantic_pairs": 128480,
+    "seconds": 76,
+    "edges": "sem(cross-channel, 0.985)+pub; без форвардів повідомлень і co_publication (швидкий режим)"
+  },
+  "versions": {
+    "python": "3.13.11",
+    "numpy": "2.5.3",
+    "pandas": "3.0.5",
+    "scikit-learn": "1.9.1"
+  }
+}

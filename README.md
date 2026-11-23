@@ -17,7 +17,8 @@ python -I scripts/s00_audit.py      # S0: аудит даних, reports/00_audi
 python -I scripts/s06_tfidf.py      # S6 (cloud): TF-IDF бейзлайн, reports/06_text_tfidf.md
 ```
 
-GPU-етапи (завантаження з OSF, ембеддинги, XLM-R, GNN) виконуються в Google Colab з папки `colab/`.
+GPU-етапи тепер виконуються локально скриптами `scripts/*.py` (RTX 3060, venv Python 3.13, див. STATUS); ноутбуки `colab/` лишилися як історія.
+Прототип: `python scripts/s12_prepare.py` потім `streamlit run app/streamlit_app.py`. Попередній звіт: `reports/quick_report.md` (HTML з рисунками: `reports/quick_report.html`).
 Повні дані (1,35 млн повідомлень) лежать на Google Drive, у репозиторій не комітяться.
 
 ## Структура

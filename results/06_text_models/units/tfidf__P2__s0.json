@@ -1,0 +1,26 @@
+{
+ "model": "tfidf",
+ "protocol": "P2",
+ "seed": 0,
+ "C": 2.0,
+ "valid_macro_f1": 0.827246659948612,
+ "splits": [
+  {
+   "fold": 0,
+   "n_train": 48350,
+   "n_valid": 5314,
+   "C": 2.0,
+   "valid_macro_f1": 0.827246659948612,
+   "grid": [
+    {
+     "C": 2.0,
+     "valid_macro_f1": 0.827246659948612,
+     "n_iter": 38,
+     "seconds": 4.4
+    }
+   ],
+   "seconds": 43.4
+  }
+ ],
+ "seconds": 43.4
+}

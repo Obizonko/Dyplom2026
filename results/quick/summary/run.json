@@ -1,0 +1,35 @@
+{
+  "script": "scripts/quick_summary.py",
+  "timestamp_utc": "2026-11-23T15:55:44+00:00",
+  "git_commit": "203972dc88cc4649adb8f4e109dcc4b2a88d6ff8",
+  "git_dirty": false,
+  "params": {
+    "n_boot": 1000,
+    "seed": 42,
+    "sources": {
+      "text": "results\\06_text_models",
+      "hybrid": "results\\quick\\07_simple_hybrid",
+      "gnn": "results\\quick\\08_gnn"
+    },
+    "models": [
+      "majority",
+      "lang_rule",
+      "channel_prior",
+      "tfidf",
+      "bge_lr",
+      "lgbm_emb",
+      "lgbm_graph",
+      "lgbm_graph_noprior",
+      "gnn_sage_notext",
+      "gnn_sage",
+      "lgbm_both"
+    ],
+    "seconds": 65
+  },
+  "versions": {
+    "python": "3.13.11",
+    "numpy": "2.5.3",
+    "pandas": "3.0.5",
+    "scikit-learn": "1.9.1"
+  }
+}

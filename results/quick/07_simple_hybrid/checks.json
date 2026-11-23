@@ -1,0 +1,42 @@
+[
+ {
+  "check": "lgbm_graph: MCC не вище 0,8 (інакше підозра на витік)",
+  "passed": true,
+  "detail": "MCC 0.699 [0.634; 0.757]"
+ },
+ {
+  "check": "lgbm_graph_noprior: MCC не вище 0,8 (інакше підозра на витік)",
+  "passed": true,
+  "detail": "MCC 0.685 [0.617; 0.748]"
+ },
+ {
+  "check": "lgbm_graph_shuf: перемішані мітки, ДІ MCC включає 0",
+  "passed": true,
+  "detail": "MCC 0.000 [0.000; 0.000]"
+ },
+ {
+  "check": "lgbm_both_shuf: перемішані мітки, ДІ MCC включає 0",
+  "passed": true,
+  "detail": "MCC 0.000 [0.000; 0.000]"
+ },
+ {
+  "check": "tfidf_shuf: перемішані мітки, ДІ MCC включає 0",
+  "passed": false,
+  "detail": "MCC -0.110 [-0.202; -0.018]"
+ },
+ {
+  "check": "bge_lr_shuf: перемішані мітки, ДІ MCC включає 0",
+  "passed": true,
+  "detail": "MCC -0.069 [-0.167; 0.025]"
+ },
+ {
+  "check": "перезв'язана мережа і розв'язані ознаки копій: lgbm_both не кращий за оригінал",
+  "passed": true,
+  "detail": "macro-F1 0.799 проти 0.800"
+ },
+ {
+  "check": "структура прогнозів (дублікати, покриття, діапазон)",
+  "passed": true,
+  "detail": "{\"n_duplicates\": 0, \"n_unknown_keys\": 0, \"all_covered\": true, \"not_covered\": [], \"p_in_range\": true, \"p_finite\": true}"
+ }
+]

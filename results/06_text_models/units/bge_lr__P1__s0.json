@@ -1,0 +1,38 @@
+{
+ "model": "bge_lr",
+ "protocol": "P1",
+ "seed": 0,
+ "C": 30.0,
+ "valid_macro_f1": 0.784079979700216,
+ "splits": [
+  {
+   "fold": 0,
+   "n_train": 73360,
+   "n_valid": 8172,
+   "C": 30.0,
+   "valid_macro_f1": 0.784079979700216,
+   "grid": [
+    {
+     "C": 3.0,
+     "valid_macro_f1": 0.7820393888409152,
+     "n_iter": 74,
+     "seconds": 2.4
+    },
+    {
+     "C": 30.0,
+     "valid_macro_f1": 0.784079979700216,
+     "n_iter": 52,
+     "seconds": 1.7
+    },
+    {
+     "C": 300.0,
+     "valid_macro_f1": 0.7825000070204406,
+     "n_iter": 68,
+     "seconds": 2.3
+    }
+   ],
+   "seconds": 6.9
+  }
+ ],
+ "seconds": 6.9
+}
