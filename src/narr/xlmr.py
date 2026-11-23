@@ -94,11 +94,14 @@ def predict_proba(model, ids: list[list[int]], pad_id: int, device, batch_size: 
 def fine_tune(train_texts: list[str], y_train: np.ndarray, valid_texts: list[str], y_valid: np.ndarray,
               eval_texts: dict[str, list[str]], *, seed: int, epochs: int = 3, lr: float = 2e-5, batch_size: int = 32,
               max_len: int = 128, warmup_frac: float = 0.06, weight_decay: float = 0.01, model_name: str = "xlm-roberta-base",
-              device: str | None = None, fp16: bool = True, tokenizer=None, model_factory=None, log=print) -> dict:
+              device: str | None = None, fp16: bool = True, tokenizer=None, model_factory=None, log=print,
+              freeze_word_embeddings: bool = True) -> dict:
     """Дотренування з вибором епохи за валідаційним macro-F1 (слабкі мітки).
 
     Повертає {"valid_macro_f1", "best_epoch", "history", "probs": {назва: ймовірності з найкращої епохи}, ...}.
-    `tokenizer` і `model_factory` можна підставити (тести); за замовчуванням завантажується `model_name` з HuggingFace."""
+    `tokenizer` і `model_factory` можна підставити (тести); за замовчуванням завантажується `model_name` з HuggingFace.
+    `freeze_word_embeddings`: матриця словникових ембедингів (у XLM-R base ~192 млн з 278 млн параметрів) не навчається.
+    Це потрібно, щоб градієнти й стани Adam вмістилися у 6 ГБ VRAM; решта мережі дотреновується повністю."""
     import torch
     from torch.optim.lr_scheduler import LambdaLR
 
@@ -126,7 +129,13 @@ def fine_tune(train_texts: list[str], y_train: np.ndarray, valid_texts: list[str
     log(f"  токенізація {info['tokenize_seconds']} с, медіана {info['tokens_median']:.0f} токенів, обрізано {info['share_truncated']:.1%}")
 
     model = model_factory().to(dev)
-    opt = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
+    if freeze_word_embeddings:
+        model.get_input_embeddings().weight.requires_grad_(False)
+    params = [p for p in model.parameters() if p.requires_grad]
+    info["n_trainable_params"] = int(sum(p.numel() for p in params))
+    info["n_params"] = int(sum(p.numel() for p in model.parameters()))
+    info["freeze_word_embeddings"] = bool(freeze_word_embeddings)
+    opt = torch.optim.AdamW(params, lr=lr, weight_decay=weight_decay)
     steps_per_epoch = math.ceil(len(ids_tr) / batch_size)
     total, warm = steps_per_epoch * epochs, int(warmup_frac * steps_per_epoch * epochs)
     sched = LambdaLR(opt, lambda s: lr_factor(s, total, warm))
@@ -151,7 +160,7 @@ def fine_tune(train_texts: list[str], y_train: np.ndarray, valid_texts: list[str
                 raise FloatingPointError(f"нескінченна втрата на епосі {epoch}")
             scaler.scale(loss).backward()
             scaler.unscale_(opt)
-            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+            torch.nn.utils.clip_grad_norm_(params, 1.0)
             scaler.step(opt)
             scaler.update()
             sched.step()

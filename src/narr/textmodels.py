@@ -72,9 +72,18 @@ def load_texts(raw_dir: Path | str, keys: np.ndarray) -> pd.Series:
     """Нормалізовані тексти з telegram_messages.parquet для потрібних ключів (як у S4). Повертає Series key -> text."""
     import pyarrow.parquet as pq
 
-    tg = pq.read_table(Path(raw_dir) / "telegram_messages.parquet", columns=["channel_id", "message_id", "text"]).to_pandas()
-    tg["key"] = make_key(tg["channel_id"], tg["message_id"])
-    tg = tg[tg["key"].isin(set(keys.tolist()))].drop_duplicates("key")
+    # Читаємо порціями і лишаємо лише потрібні ключі: повний файл (1 млн текстів) у пам'ять не вантажимо
+    # (на ноутбуці з ~14 ГБ RAM це ще й заважало ініціалізації CUDA)
+    want = set(keys.tolist())
+    parts = []
+    pf = pq.ParquetFile(Path(raw_dir) / "telegram_messages.parquet")
+    for batch in pf.iter_batches(batch_size=50_000, columns=["channel_id", "message_id", "text"]):
+        df = batch.to_pandas()
+        df["key"] = make_key(df["channel_id"], df["message_id"])
+        df = df[df["key"].isin(want)]
+        if len(df):
+            parts.append(df[["key", "text"]])
+    tg = pd.concat(parts).drop_duplicates("key")
     s = pd.Series(tg["text"].to_numpy(), index=tg["key"].to_numpy())
     missing = np.setdiff1d(keys, s.index.to_numpy())
     if len(missing):

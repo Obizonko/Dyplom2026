@@ -52,6 +52,7 @@
 
 ## Відхилення від плану
 
+- 23.11.2026: S6 XLM-R на RTX 3060 (6 ГБ VRAM): словникові ембединги заморожено (`freeze_word_embeddings`, 192 млн з 278 млн параметрів, навчається 86 млн), fp16 autocast, batch 16, max-len 128. Без заморожування OOM на backward. Це деталь реалізації, піде у звіт S6. `load_texts` читає `telegram_messages.parquet` порціями (повне читання тримало ~2 ГБ RAM, і CUDA падала з випадковими помилками ініціалізації).
 - 23.11.2026: роботу перенесено на локальний ноутбук (Windows 11, Ryzen 5 5600H, RTX 3060 Laptop 6 ГБ VRAM, ~14 ГБ RAM, один диск C: з ~22 ГБ вільних). Усі етапи, зокрема GPU, тепер запускаються локально скриптами `scripts/*.py`, ноутбуки `colab/*.ipynb` не використовуються. Середовище: `.venv` (Python 3.13.11 через uv, torch 2.11.0+cu128, PyG 2.8.1 з pyg-lib, NeighborLoader перевірено). Версії в `requirements.txt` оновлено (додано torch, transformers, sentence-transformers, lightgbm, optuna, shap, streamlit, PyG).
 - 23.11.2026: `hnswlib` на Windows без MSVC Build Tools не збирається (колеса немає). Тести з hnswlib пропускаються, семантичні сусіди на цьому ноутбуці рахуватимуться точним пошуком на GPU (або в Linux-середовищі з hnswlib); якщо так буде, це записується у відповідному звіті.
 - 23.11.2026: з тестів один падав на Windows (`detect_language_parallel` просив `fork`); виправлено вибором `spawn` там, де `fork` немає (`src/narr/language.py`).

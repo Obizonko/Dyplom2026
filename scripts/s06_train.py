@@ -90,6 +90,7 @@ def main(argv=None) -> int:
     ap.add_argument("--batch-size", type=int, default=32)
     ap.add_argument("--lr", type=float, default=2e-5)
     ap.add_argument("--model-name", default="xlm-roberta-base")
+    ap.add_argument("--unfreeze-embeddings", action="store_true", help="XLM-R: навчати й словникові ембединги (на 6 ГБ VRAM не вміщається)")
     ap.add_argument("--no-controls", action="store_true")
     ap.add_argument("--limit", type=int, default=0, help="смоук-тест: залишити не більше N рядків train у кожному спліті")
     args = ap.parse_args(argv)
@@ -117,7 +118,8 @@ def main(argv=None) -> int:
         if args.limit:
             s["train"] = s["train"].sample(n=min(args.limit, len(s["train"])), random_state=42).reset_index(drop=True)
 
-    xk = dict(epochs=args.epochs, max_len=args.max_len, batch_size=args.batch_size, lr=args.lr, model_name=args.model_name)
+    xk = dict(epochs=args.epochs, max_len=args.max_len, batch_size=args.batch_size, lr=args.lr, model_name=args.model_name,
+              freeze_word_embeddings=not args.unfreeze_embeddings)
     lookup = make_lookup(Path(args.emb_dir)) if "bge_lr" in models else None
     infos = tm.run_all(splits, out, models=models, protocols=protocols, xlmr_protocols=tuple(args.xlmr_protocols.split(",")),
                        seeds=tuple(range(args.seeds)), controls=not args.no_controls, emb_lookup=lookup, xlmr_kwargs=xk)
