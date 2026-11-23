@@ -11,3 +11,10 @@ __pycache__/
 .pytest_cache/
 .ipynb_checkpoints/
 .venv/
+
+# Локальні запуски
+logs/
+results/dev/
+*.npy
+*.pt
+*.safetensors

@@ -8,12 +8,29 @@ pyarrow==26.0.1
 igraph==1.0.0
 leidenalg==0.12.0
 networkx==3.7
-hnswlib==0.8.0
+hnswlib==0.8.0   # на Windows без MSVC не збирається; там розрахунок сусідів замінено точним пошуком (див. STATUS.md), лінуксові середовища ставлять як є
 umap-learn==0.6.0
 PyYAML==6.0.3
 joblib==1.6.0
 nbformat==5.11.1
 langid==1.1.6
 pytest==9.1.1
-# S4 (Colab): torch і sentence-transformers беруться з середовища Colab, їхні версії пишуться в results/04_semantic/run.json
-# S6 (Colab): torch і transformers беруться з середовища Colab, версії пишуться в results/06_text_models/colab_run.json і run.json
+# Локальне середовище (Windows 11, RTX 3060 Laptop 6 ГБ), додано 23.11.2026.
+# torch ставиться окремо зі збіркою CUDA 12.8:
+#   uv pip install torch --index-url https://download.pytorch.org/whl/cu128
+torch==2.11.0+cu128
+transformers==5.24.0
+sentence-transformers==6.3.0
+accelerate==1.16.0
+lightgbm==4.7.0
+optuna==5.1.0
+shap==0.54.1
+streamlit==1.67.0
+jupyter==1.1.1
+nbconvert==7.17.2
+nbclient==0.11.0
+ipykernel==7.4.0
+torch_geometric==2.8.1
+# pyg-lib і torch-sparse (потрібні NeighborLoader), колеса з https://data.pyg.org/whl/torch-2.11.0+cu128.html
+pyg-lib==0.9.0+pt211cu128
+torch-sparse==0.6.18+pt211cu128
