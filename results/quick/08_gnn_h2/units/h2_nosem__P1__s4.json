@@ -1,0 +1,94 @@
+{
+ "model": "h2_nosem",
+ "protocol": "P1",
+ "seed": 4,
+ "valid_macro_f1": 0.8275552287800885,
+ "splits": [
+  {
+   "fold": 0,
+   "valid_macro_f1": 0.8275552287800885,
+   "best_epoch": 9,
+   "history": [
+    {
+     "epoch": 1,
+     "train_loss": 0.5905584610170789,
+     "valid_macro_f1": 0.7784198320762394,
+     "seconds": 0.9
+    },
+    {
+     "epoch": 2,
+     "train_loss": 0.422072585258219,
+     "valid_macro_f1": 0.804949049845076,
+     "seconds": 1.0
+    },
+    {
+     "epoch": 3,
+     "train_loss": 0.39261968185504276,
+     "valid_macro_f1": 0.7953495282536619,
+     "seconds": 0.9
+    },
+    {
+     "epoch": 4,
+     "train_loss": 0.3720688571532567,
+     "valid_macro_f1": 0.8243339950615949,
+     "seconds": 0.9
+    },
+    {
+     "epoch": 5,
+     "train_loss": 0.35560569498274064,
+     "valid_macro_f1": 0.8215113492343991,
+     "seconds": 1.0
+    },
+    {
+     "epoch": 6,
+     "train_loss": 0.3433567624953058,
+     "valid_macro_f1": 0.8126680693129107,
+     "seconds": 0.9
+    },
+    {
+     "epoch": 7,
+     "train_loss": 0.33568786995278466,
+     "valid_macro_f1": 0.8248923899424027,
+     "seconds": 0.9
+    },
+    {
+     "epoch": 8,
+     "train_loss": 0.3260387116008335,
+     "valid_macro_f1": 0.8156868382440416,
+     "seconds": 0.9
+    },
+    {
+     "epoch": 9,
+     "train_loss": 0.320446172522174,
+     "valid_macro_f1": 0.8275552287800885,
+     "seconds": 0.9
+    },
+    {
+     "epoch": 10,
+     "train_loss": 0.3118216262923347,
+     "valid_macro_f1": 0.7990807105457602,
+     "seconds": 0.9
+    },
+    {
+     "epoch": 11,
+     "train_loss": 0.3087297272351053,
+     "valid_macro_f1": 0.8039200791483057,
+     "seconds": 0.9
+    },
+    {
+     "epoch": 12,
+     "train_loss": 0.304494123491976,
+     "valid_macro_f1": 0.8153170416879889,
+     "seconds": 1.0
+    },
+    {
+     "epoch": 13,
+     "train_loss": 0.29889828628963894,
+     "valid_macro_f1": 0.815002402798005,
+     "seconds": 0.9
+    }
+   ]
+  }
+ ],
+ "seconds": 12.5
+}

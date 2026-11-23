@@ -1,0 +1,31 @@
+{
+  "script": "scripts/s08_h2_eval.py",
+  "timestamp_utc": "2026-11-23T16:08:45+00:00",
+  "git_commit": "7c26c47d601e40ac578e7ad46ada5974d6eb58e0",
+  "git_dirty": true,
+  "params": {
+    "n_boot": 1000,
+    "seed": 42,
+    "verdict": {
+      "confirmed_before_holm": false,
+      "main_diff_macro_f1_ru": -0.0366883788722564,
+      "ci": [
+        -0.08745904441053877,
+        0.01230174875628852
+      ],
+      "same_positive_sign_all_thresholds": false,
+      "n_seeds": 5,
+      "diff_by_threshold_ru": {
+        "h2_sem975": -0.01522279594568754,
+        "h2_sem985": -0.0366883788722564,
+        "h2_sem990": -0.025845619204792225
+      }
+    }
+  },
+  "versions": {
+    "python": "3.13.11",
+    "numpy": "2.5.3",
+    "pandas": "3.0.5",
+    "scikit-learn": "1.9.1"
+  }
+}

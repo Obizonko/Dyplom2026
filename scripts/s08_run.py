@@ -29,7 +29,7 @@ def load_graph_inputs(emb_dir: Path, edges_path: Path, comm_path: Path, cache: P
         pairs = pd.read_parquet(cache)
     else:
         t0 = time.time()
-        pairs = ft.semantic_pairs(E, index["channel_id"].to_numpy())
+        pairs = ft.semantic_pairs(E, index["channel_id"].to_numpy(), threshold=0.975)  # надмножина: пороги 0,985 і 0,99 відбираються за cos
         cache.parent.mkdir(parents=True, exist_ok=True)
         pairs.to_parquet(cache, index=False)
         log(f"Семантичні пари між каналами: {len(pairs)} за {time.time() - t0:.0f} с")
@@ -52,13 +52,15 @@ def main(argv=None) -> int:
     ap.add_argument("--epochs", type=int, default=12)
     ap.add_argument("--hidden", type=int, default=128)
     ap.add_argument("--sanity", action="store_true")
-    ap.add_argument("--variants", default="gnn_sage,gnn_sage_notext")
+    ap.add_argument("--variants", default="gnn_sage,gnn_sage_notext",
+                    help="gnn_sage, gnn_sage_notext (швидкий режим) або H2: h2_nosem, h2_sem975, h2_sem985, h2_sem990, h2_nofwd")
+    ap.add_argument("--fwd", default=str(ROOT / "data" / "raw" / "extracted" / "parquet_set" / "forward_edges.parquet"))
     args = ap.parse_args(argv)
     out = Path(args.out)
     t_all = time.time()
     index, keys, E, pairs, chan_ids, cf = load_graph_inputs(
         Path(args.emb_dir), ROOT / "data_small" / "channel_flow_edges.csv", ROOT / "results" / "03_network" / "communities.csv",
-        ROOT / "data" / "interim" / "features" / "sem_pairs.parquet")
+        ROOT / "data" / "interim" / "features" / "sem_pairs_0975.parquet")
     row = pd.Series(np.arange(len(keys)), index=keys)
     th_map = index.set_index("key")["text_hash"]
     msg_channel = index["channel_id"].to_numpy()
@@ -88,11 +90,25 @@ def main(argv=None) -> int:
     for s in splits:
         for part in ("train", "test"):
             s[part]["text_hash"] = s[part]["key"].map(th_map)
-    graphs = {}
+    fwd = None
+    if any(v.startswith("h2_") and v != "h2_nofwd" for v in args.variants.split(",")):
+        import pyarrow.parquet as pq
+
+        fe = pq.read_table(args.fwd, columns=["logical_src_channel_id", "logical_src_message_id", "logical_dst_channel_id", "logical_dst_message_id"]).to_pandas()
+        ks, kd = tm.make_key(fe["logical_src_channel_id"], fe["logical_src_message_id"]), tm.make_key(fe["logical_dst_channel_id"], fe["logical_dst_message_id"])
+        ok = pd.Series(ks).isin(row.index).to_numpy() & pd.Series(kd).isin(row.index).to_numpy()
+        fwd = pd.DataFrame({"src": row.loc[ks[ok]].to_numpy(), "dst": row.loc[kd[ok]].to_numpy()})
+        fwd = fwd[fwd["src"] != fwd["dst"]].drop_duplicates()
+        print(f"Форвард-ребра: {len(fe)} у наборі, обидва кінці в наборі ембедингів {int(ok.sum())}, унікальних без петель {len(fwd)}", flush=True)
+    SPECS = {"gnn_sage": dict(text=True, thr=0.985, fwd=False), "gnn_sage_notext": dict(text=False, thr=0.985, fwd=False),
+             "h2_nosem": dict(text=True, thr=None, fwd=True), "h2_sem975": dict(text=True, thr=0.975, fwd=True),
+             "h2_sem985": dict(text=True, thr=0.985, fwd=True), "h2_sem990": dict(text=True, thr=0.99, fwd=True),
+             "h2_nofwd": dict(text=True, thr=0.985, fwd=False)}
     for variant in args.variants.split(","):
-        data = gnn.build_graph(E, msg_channel, pairs, chan_ids, cf, text=(variant != "gnn_sage_notext"))
-        for s in [x for x in splits]:
-            pass
+        sp = SPECS[variant]
+        pr_v = None if sp["thr"] is None else pairs[pairs["cos"] >= sp["thr"] - 1e-9]
+        data = gnn.build_graph(E, msg_channel, pr_v, chan_ids, cf, text=sp["text"], fwd=fwd if sp["fwd"] else None)
+        print(f"Граф {variant}: семантичних пар {0 if pr_v is None else len(pr_v)}, форвардів {len(fwd) if sp['fwd'] else 0}", flush=True)
         for pr in protocols:
             for sd in range(args.seeds):
                 un = tm.unit_name(variant, pr, sd)
@@ -123,7 +139,7 @@ def main(argv=None) -> int:
                 print(f"  готово за {info['seconds']} с, valid macro-F1 {info['valid_macro_f1']:.4f}", flush=True)
         del data
     write_run_json(out, "scripts/s08_run.py", {"args": vars(args), "n_semantic_pairs": int(len(pairs)), "seconds": round(time.time() - t_all),
-                                               "edges": "sem(cross-channel, 0.985)+pub; без форвардів повідомлень і co_publication (швидкий режим)"})
+                                               "edges": "sem(cross-channel)+pub, форварди повідомлень лише у варіантах h2_*; co_publication немає"})
     print(f"Готово за {time.time() - t_all:.0f} с")
     return 0
 

@@ -1,0 +1,100 @@
+{
+ "model": "h2_sem985",
+ "protocol": "P1",
+ "seed": 1,
+ "valid_macro_f1": 0.8308382544376613,
+ "splits": [
+  {
+   "fold": 0,
+   "valid_macro_f1": 0.8308382544376613,
+   "best_epoch": 10,
+   "history": [
+    {
+     "epoch": 1,
+     "train_loss": 0.6444968481858572,
+     "valid_macro_f1": 0.783119129676779,
+     "seconds": 1.6
+    },
+    {
+     "epoch": 2,
+     "train_loss": 0.4238140442305141,
+     "valid_macro_f1": 0.8057693321786183,
+     "seconds": 1.7
+    },
+    {
+     "epoch": 3,
+     "train_loss": 0.3952721804380417,
+     "valid_macro_f1": 0.8139635473727644,
+     "seconds": 1.3
+    },
+    {
+     "epoch": 4,
+     "train_loss": 0.37382008963161045,
+     "valid_macro_f1": 0.8186143658747282,
+     "seconds": 1.3
+    },
+    {
+     "epoch": 5,
+     "train_loss": 0.3619878432816929,
+     "valid_macro_f1": 0.8257845055218209,
+     "seconds": 1.2
+    },
+    {
+     "epoch": 6,
+     "train_loss": 0.353115095032586,
+     "valid_macro_f1": 0.8195176093832564,
+     "seconds": 1.2
+    },
+    {
+     "epoch": 7,
+     "train_loss": 0.3473862757285436,
+     "valid_macro_f1": 0.825071507542155,
+     "seconds": 1.2
+    },
+    {
+     "epoch": 8,
+     "train_loss": 0.34222825947735047,
+     "valid_macro_f1": 0.8177619089709667,
+     "seconds": 1.2
+    },
+    {
+     "epoch": 9,
+     "train_loss": 0.33738796330160564,
+     "valid_macro_f1": 0.8282205858948439,
+     "seconds": 1.2
+    },
+    {
+     "epoch": 10,
+     "train_loss": 0.33455372601747513,
+     "valid_macro_f1": 0.8308382544376613,
+     "seconds": 1.2
+    },
+    {
+     "epoch": 11,
+     "train_loss": 0.3274298227495617,
+     "valid_macro_f1": 0.8207035551873479,
+     "seconds": 1.3
+    },
+    {
+     "epoch": 12,
+     "train_loss": 0.3229473854104678,
+     "valid_macro_f1": 0.8160286870488137,
+     "seconds": 1.2
+    },
+    {
+     "epoch": 13,
+     "train_loss": 0.31982388016250396,
+     "valid_macro_f1": 0.8211136359081253,
+     "seconds": 1.2
+    },
+    {
+     "epoch": 14,
+     "train_loss": 0.3164825497402085,
+     "valid_macro_f1": 0.8251498878266208,
+     "seconds": 1.2
+    }
+   ]
+  }
+ ],
+ "seconds": 18.2
+}

@@ -15,8 +15,8 @@ import pandas as pd
 from narr.evaluate import binary_metrics
 
 
-def build_graph(emb: np.ndarray | None, msg_channel: np.ndarray, pairs: pd.DataFrame, chan_ids: np.ndarray, chan_feat: np.ndarray,
-                text: bool = True):
+def build_graph(emb: np.ndarray | None, msg_channel: np.ndarray, pairs: pd.DataFrame | None, chan_ids: np.ndarray, chan_feat: np.ndarray,
+                text: bool = True, fwd: pd.DataFrame | None = None):
     """HeteroData. msg_channel: channel_id кожного вузла msg; chan_ids: порядок вузлів chan; chan_feat: (n_chan, d) стандартизовані ознаки."""
     import torch
     from torch_geometric.data import HeteroData
@@ -28,9 +28,14 @@ def build_graph(emb: np.ndarray | None, msg_channel: np.ndarray, pairs: pd.DataF
     else:
         d["msg"].x = torch.zeros((n, 1), dtype=torch.float32)
     d["chan"].x = torch.as_tensor(chan_feat.astype(np.float32))
-    i, j = pairs["i"].to_numpy(), pairs["j"].to_numpy()
-    ei = torch.as_tensor(np.vstack([np.concatenate([i, j]), np.concatenate([j, i])]), dtype=torch.long)
-    d["msg", "sem", "msg"].edge_index = ei
+    if pairs is not None and len(pairs):
+        i, j = pairs["i"].to_numpy(), pairs["j"].to_numpy()
+        ei = torch.as_tensor(np.vstack([np.concatenate([i, j]), np.concatenate([j, i])]), dtype=torch.long)
+        d["msg", "sem", "msg"].edge_index = ei
+    if fwd is not None and len(fwd):  # спрямовані форварди: джерело -> пересилання, і зворотний тип
+        fe = torch.as_tensor(np.vstack([fwd["src"].to_numpy(), fwd["dst"].to_numpy()]), dtype=torch.long)
+        d["msg", "fwd", "msg"].edge_index = fe
+        d["msg", "rev_fwd", "msg"].edge_index = fe.flip(0)
     cmap = pd.Series(np.arange(len(chan_ids)), index=chan_ids)
     c = cmap.loc[msg_channel].to_numpy()
     pub = torch.as_tensor(np.vstack([np.arange(n), c]), dtype=torch.long)
@@ -39,7 +44,7 @@ def build_graph(emb: np.ndarray | None, msg_channel: np.ndarray, pairs: pd.DataF
     return d
 
 
-def make_model(in_msg: int, in_chan: int, hidden: int = 128, dropout: float = 0.3, text_dropout: float = 0.0):
+def make_model(in_msg: int, in_chan: int, hidden: int = 128, dropout: float = 0.3, text_dropout: float = 0.0, msg_relations=("sem",)):
     import torch
     from torch import nn
     from torch_geometric.nn import HeteroConv, SAGEConv
@@ -48,8 +53,9 @@ def make_model(in_msg: int, in_chan: int, hidden: int = 128, dropout: float = 0.
         def __init__(self):
             super().__init__()
             self.lin_m, self.lin_c = nn.Linear(in_msg, hidden), nn.Linear(in_chan, hidden)
-            mk = lambda: HeteroConv({("msg", "sem", "msg"): SAGEConv(hidden, hidden), ("msg", "pub", "chan"): SAGEConv(hidden, hidden),
-                                     ("chan", "rev_pub", "msg"): SAGEConv(hidden, hidden)}, aggr="sum")
+            rels = {("msg", r, "msg"): SAGEConv(hidden, hidden) for r in msg_relations}
+            rels.update({("msg", "pub", "chan"): SAGEConv(hidden, hidden), ("chan", "rev_pub", "msg"): SAGEConv(hidden, hidden)})
+            mk = lambda: HeteroConv({k: SAGEConv(hidden, hidden) for k in rels}, aggr="sum")
             self.c1, self.c2 = mk(), mk()
             self.out = nn.Linear(hidden, 2)
             self.dp = nn.Dropout(dropout)
@@ -105,7 +111,8 @@ def train_gnn(data, y_all: np.ndarray, train_idx: np.ndarray, valid_idx: np.ndar
     tr_loader = mk(train_idx, True)
     va_loader = mk(valid_idx, False)
     ev_loaders = {k: mk(v, False) for k, v in eval_idx.items()}
-    model = make_model(data["msg"].x.shape[1], data["chan"].x.shape[1], hidden, text_dropout=text_dropout).to(dev)
+    msg_rel = [et[1] for et in data.edge_types if et[0] == "msg" and et[2] == "msg"]
+    model = make_model(data["msg"].x.shape[1], data["chan"].x.shape[1], hidden, text_dropout=text_dropout, msg_relations=msg_rel).to(dev)
     opt = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
     w = torch.as_tensor(class_weights(y_all[train_idx]), device=dev)
     best = {"valid_macro_f1": -1.0, "epoch": -1, "probs": {}}
