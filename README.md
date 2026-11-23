@@ -2,7 +2,7 @@
 
 Тема: «Гібридні моделі машинного навчання на основі графової топології та семантичного аналізу тексту для виявлення
 дезінформаційних наративів». Дані й базова розмітка: [TeleNarratives](https://github.com/yuliavistak/TeleNarratives).
-План виконання: `PLAN_vykonannya.md` (у Project «Dyplom»). Поточний стан: [STATUS.md](STATUS.md).
+План виконання: [plan/PLAN_vykonannya.md](plan/PLAN_vykonannya.md) (копія є і в Project «Dyplom»). Поточний стан: [STATUS.md](STATUS.md).
 
 ## Як відтворити
 
