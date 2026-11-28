@@ -209,7 +209,8 @@ def run_xlmr(splits: list[dict], seed: int, shuffle_seed: int | None, kwargs: di
         t0 = time.time()
         a, v, ya, yv = _train_view(s, shuffle_seed)
         log(f"  {name} {s['protocol']} fold {s['fold']} seed {seed}: train {len(a)}, valid {len(v)}, test {len(s['test'])}")
-        r = fine_tune(a["text"].tolist(), ya, v["text"].tolist(), yv, {"test": s["test"]["text"].tolist()}, seed=seed, log=log, **kwargs)
+        wkw = {"w_train": a["weight"].to_numpy(), "w_valid": v["weight"].to_numpy()} if is_v11(s) else {}
+        r = fine_tune(a["text"].tolist(), ya, v["text"].tolist(), yv, {"test": s["test"]["text"].tolist()}, seed=seed, log=log, **kwargs, **wkw)
         preds.append(_pred_frame(s, name, seed, r["probs"]["test"]))
         per_split.append({"fold": s["fold"], "n_train": r["n_train"], "n_valid": r["n_valid"], "best_epoch": r["best_epoch"],
                           "valid_macro_f1": r["valid_macro_f1"], "history": r["history"], "tokens_median": r["tokens_median"],
@@ -226,7 +227,7 @@ def unit_name(model: str, protocol: str, seed: int) -> str:
 
 
 def run_all(splits: list[dict], out: Path | str, *, models=TEXT_MODELS, protocols=("P1", "P2", "P3"), xlmr_protocols=("P1", "P2"),
-            seeds=(0, 1, 2), controls=True, emb_lookup=None, xlmr_kwargs: dict | None = None, log=print, n_perm: int = 1) -> list[dict]:
+            seeds=(0, 1, 2), controls=True, emb_lookup=None, xlmr_kwargs: dict | None = None, log=print, n_perm: int = 1, xlmr_perm: int = 20) -> list[dict]:
     """Проходить усі одиниці у порядку: P1 перед P2 і P3 (щоб C для P2, P3 взяти з P1). Повертає список info усіх одиниць (нових і з диска)."""
     out = Path(out)
     (out / "units").mkdir(parents=True, exist_ok=True)
@@ -267,5 +268,9 @@ def run_all(splits: list[dict], out: Path | str, *, models=TEXT_MODELS, protocol
                 for k in range(n_perm):
                     unit(kind + SHUF_SUFFIX, "P1", k, lambda: run_lr(kind, by_pr["P1"], emb_lookup, chosen_C.get(kind), 1000 + k, log, unit_seed=k))
         if "xlmr" in models and "P1" in xlmr_protocols:
-            unit("xlmr" + SHUF_SUFFIX, "P1", 0, lambda: run_xlmr(by_pr["P1"], 0, 1234, {**(xlmr_kwargs or {}), "epochs": 1}, log))
+            if n_perm <= 1:
+                unit("xlmr" + SHUF_SUFFIX, "P1", 0, lambda: run_xlmr(by_pr["P1"], 0, 1234, {**(xlmr_kwargs or {}), "epochs": 1}, log))
+            else:  # версія 1.1: xlmr_perm перестановок по 1 епосі (дорого; кількість задається окремо)
+                for k in range(xlmr_perm):
+                    unit("xlmr" + SHUF_SUFFIX, "P1", k, lambda: run_xlmr(by_pr["P1"], k, 1000 + k, {**(xlmr_kwargs or {}), "epochs": 1}, log))
     return infos

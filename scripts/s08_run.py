@@ -55,6 +55,8 @@ def main(argv=None) -> int:
     ap.add_argument("--arch", default="sage", choices=["sage", "rgcn", "hgt"], help="для --sanity")
     ap.add_argument("--variants", default="gnn_sage,gnn_sage_notext",
                     help="gnn_sage, gnn_sage_notext (швидкий режим) або H2: h2_nosem, h2_sem975, h2_sem985, h2_sem990, h2_nofwd")
+    ap.add_argument("--n-perm", type=int, default=0, help="перестановок міток для першого варіанта (версія 1.1: 20)")
+    ap.add_argument("--v11", action="store_true", help="преєстрація 1.1 (11.1): ваги пулу, валідація за компонентами копій, без балансування класів")
     ap.add_argument("--fwd", default=str(ROOT / "data" / "raw" / "extracted" / "parquet_set" / "forward_edges.parquet"))
     args = ap.parse_args(argv)
     out = Path(args.out)
@@ -91,6 +93,12 @@ def main(argv=None) -> int:
     for s in splits:
         for part in ("train", "test"):
             s[part]["text_hash"] = s[part]["key"].map(th_map)
+    if args.v11:
+        from narr import weights as wt
+
+        cc, pk, _ = wt.load_v11_inputs(ROOT)
+        pd.DataFrame(wt.attach_weights(splits, pk, cc, th_map)).to_csv(out / "weights_summary.csv", index=False)
+        print("Версія 1.1: ваги пулу і валідація за компонентами копій додано", flush=True)
     fwd = None
     if any((v.startswith("h2_") and v != "h2_nofwd") or (v.split("_")[0] in ("sage", "rgcn", "hgt") and v.split("_")[-1] != "nofwd") for v in args.variants.split(",")):
         import pyarrow.parquet as pq
@@ -131,9 +139,12 @@ def main(argv=None) -> int:
         pr_v = None if sp["thr"] is None else pairs[pairs["cos"] >= sp["thr"] - 1e-9]
         data = gnn.build_graph(E, msg_channel, pr_v, chan_ids, cf, text=sp["text"], fwd=fwd if sp["fwd"] else None, copub=copub if sp["copub"] else None)
         print(f"Граф {variant}: семантичних пар {0 if pr_v is None else len(pr_v)}, форвардів {len(fwd) if sp['fwd'] else 0}", flush=True)
-        for pr in protocols:
-            for sd in range(args.seeds):
-                un = tm.unit_name(variant, pr, sd)
+        jobs = [(variant, pr, sd, None) for pr in protocols for sd in range(args.seeds)]
+        if args.n_perm and variant == args.variants.split(",")[0] and "P1" in protocols:  # контроль з перемішаними мітками (11.1, п. 6)
+            jobs += [(variant + "_shuf", "P1", k, 1000 + k) for k in range(args.n_perm)]
+        for name, pr, sd, shuf in jobs:
+            if True:
+                un = tm.unit_name(name, pr, sd)
                 pj, pp = out / "units" / f"{un}.json", out / "predictions" / f"{un}.parquet"
                 if pj.exists() and pp.exists():
                     print(f"[пропуск] {un}", flush=True)
@@ -143,25 +154,35 @@ def main(argv=None) -> int:
                 preds, per = [], []
                 for s in [x for x in splits if x["protocol"] == pr]:
                     tr, te = s["train"].reset_index(drop=True), s["test"].reset_index(drop=True)
-                    m_tr, m_va = group_valid_split(tr, 0.1, 42)
+                    if args.v11:
+                        m_va = tr["is_valid"].astype(bool)
+                        m_tr = ~m_va
+                    else:
+                        m_tr, m_va = group_valid_split(tr, 0.1, 42)
                     y = np.zeros(len(keys), dtype=np.int64)
                     ti = row.loc[tr["key"]].to_numpy()
-                    y[ti] = tr["weak_narrative"].astype(int).to_numpy()
+                    yt = tr["weak_narrative"].astype(int).to_numpy()
+                    y[ti] = yt if shuf is None else np.random.default_rng(shuf).permutation(yt)
                     te_idx = row.loc[te["key"]].to_numpy()
-                    r = gnn.train_gnn(data, y, ti[m_tr.to_numpy()], ti[m_va.to_numpy()], {"test": te_idx}, seed=sd, epochs=args.epochs, hidden=args.hidden, arch=sp["arch"])
+                    w_all = None
+                    if args.v11:
+                        w_all = np.zeros(len(keys), dtype=np.float32)
+                        w_all[ti] = tr["weight"].to_numpy()
+                    r = gnn.train_gnn(data, y, ti[m_tr.to_numpy()], ti[m_va.to_numpy()], {"test": te_idx}, seed=sd, epochs=args.epochs, hidden=args.hidden, arch=sp["arch"],
+                                      w_all=w_all)
                     ids, p = r["probs"]["test"]
                     pm_ = pd.Series(p, index=ids).loc[te_idx].to_numpy()
-                    preds.append(pd.DataFrame({"protocol": pr, "fold": s["fold"], "model": variant, "seed": sd, "channel_id": te["channel_id"].to_numpy(),
+                    preds.append(pd.DataFrame({"protocol": pr, "fold": s["fold"], "model": name, "seed": sd, "channel_id": te["channel_id"].to_numpy(),
                                                "message_id": te["message_id"].to_numpy(), "p": pm_}))
                     per.append({"fold": s["fold"], "valid_macro_f1": r["valid_macro_f1"], "best_epoch": r["epoch"], "history": r["history"]})
                 pd.concat(preds, ignore_index=True).to_parquet(pp, index=False)
-                info = {"model": variant, "protocol": pr, "seed": sd, "valid_macro_f1": float(np.mean([x["valid_macro_f1"] for x in per])), "splits": per,
+                info = {"model": name, "protocol": pr, "seed": sd, "shuffle_seed": shuf, "rules": "v1.1" if args.v11 else "v1", "valid_macro_f1": float(np.mean([x["valid_macro_f1"] for x in per])), "splits": per,
                         "seconds": round(time.time() - t0, 1)}
                 pj.write_text(json.dumps(info, ensure_ascii=False, indent=1), encoding="utf-8")
                 print(f"  готово за {info['seconds']} с, valid macro-F1 {info['valid_macro_f1']:.4f}", flush=True)
         del data
     write_run_json(out, "scripts/s08_run.py", {"args": vars(args), "n_semantic_pairs": int(len(pairs)), "seconds": round(time.time() - t_all),
-                                               "edges": "sem(cross-channel)+pub, форварди повідомлень лише у варіантах h2_*; co_publication немає"})
+                                               "edges": "залежить від варіанта: sage|rgcn|hgt_* мають sem (між каналами), fwd, copub і pub; h2_* без copub"})
     print(f"Готово за {time.time() - t_all:.0f} с")
     return 0
 

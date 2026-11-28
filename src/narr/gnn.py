@@ -12,7 +12,7 @@ import time
 import numpy as np
 import pandas as pd
 
-from narr.evaluate import binary_metrics
+from narr.evaluate import binary_metrics, weighted_macro_f1
 
 
 def build_graph(emb: np.ndarray | None, msg_channel: np.ndarray, pairs: pd.DataFrame | None, chan_ids: np.ndarray, chan_feat: np.ndarray,
@@ -109,8 +109,10 @@ def predict(model, loader, device) -> tuple[np.ndarray, np.ndarray]:
 
 def train_gnn(data, y_all: np.ndarray, train_idx: np.ndarray, valid_idx: np.ndarray, eval_idx: dict[str, np.ndarray], *, seed: int, epochs: int = 12,
               hidden: int = 128, lr: float = 2e-3, batch_size: int = 2048, num_neighbors=(15, 10), patience: int = 4, text_dropout: float = 0.0, arch: str = "sage",
-              device: str | None = None, log=print) -> dict:
-    """Навчання з вибором епохи за valid macro-F1 (слабкі мітки). Повертає ймовірності для eval_idx з найкращої епохи."""
+              device: str | None = None, log=print, w_all: np.ndarray | None = None) -> dict:
+    """Навчання з вибором епохи за valid macro-F1 (слабкі мітки). Повертає ймовірності для eval_idx з найкращої епохи.
+    w_all (преєстрація 1.1, розділ 11.1): ваги пулу на всіх вузлах msg (поза train і valid будь-які). Тоді класи не балансуються,
+    втрата в партії sum(w * CE) / sum(w), валідаційний macro-F1 зважений."""
     import torch
     from torch_geometric.loader import NeighborLoader
 
@@ -127,7 +129,9 @@ def train_gnn(data, y_all: np.ndarray, train_idx: np.ndarray, valid_idx: np.ndar
     msg_rel = [et[1] for et in data.edge_types if et[0] == "msg" and et[2] == "msg"]
     model = make_model(data["msg"].x.shape[1], data["chan"].x.shape[1], hidden, text_dropout=text_dropout, msg_relations=msg_rel, arch=arch, metadata=data.metadata()).to(dev)
     opt = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
-    w = torch.as_tensor(class_weights(y_all[train_idx]), device=dev)
+    weighted = w_all is not None
+    w = None if weighted else torch.as_tensor(class_weights(y_all[train_idx]), device=dev)
+    w_t = torch.as_tensor(np.asarray(w_all, dtype=np.float32)) if weighted else None
     best = {"valid_macro_f1": -1.0, "epoch": -1, "probs": {}}
     hist, bad = [], 0
     for ep in range(1, epochs + 1):
@@ -137,12 +141,17 @@ def train_gnn(data, y_all: np.ndarray, train_idx: np.ndarray, valid_idx: np.ndar
             b = b.to(dev)
             opt.zero_grad(set_to_none=True)
             logits = model(b.x_dict, b.edge_index_dict)[: b["msg"].batch_size]
-            loss = torch.nn.functional.cross_entropy(logits, b["msg"].y[: b["msg"].batch_size], weight=w)
+            yb = b["msg"].y[: b["msg"].batch_size]
+            if weighted:
+                wb = w_t[b["msg"].n_id[: b["msg"].batch_size].cpu()].to(dev)
+                loss = (torch.nn.functional.cross_entropy(logits, yb, reduction="none") * wb).sum() / wb.sum().clamp_min(1e-12)
+            else:
+                loss = torch.nn.functional.cross_entropy(logits, yb, weight=w)
             loss.backward()
             opt.step()
             losses.append(float(loss.detach()))
         ids, pv = predict(model, va_loader, dev)
-        f1 = binary_metrics(y_all[ids], pv)["macro_f1"]
+        f1 = weighted_macro_f1(y_all[ids], pv, None if not weighted else np.asarray(w_all)[ids])
         hist.append({"epoch": ep, "train_loss": float(np.mean(losses)), "valid_macro_f1": float(f1), "seconds": round(time.time() - t0, 1)})
         log(f"    епоха {ep}: втрата {hist[-1]['train_loss']:.4f}, valid macro-F1 {f1:.4f}, {hist[-1]['seconds']} с")
         if f1 > best["valid_macro_f1"]:

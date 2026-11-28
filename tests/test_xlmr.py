@@ -91,3 +91,9 @@ def test_fine_tune_tiny_model_if_torch_available():
                        model_factory=factory, device="cpu", log=lambda *_: None)
     assert r["valid_macro_f1"] > 0.8 and len(r["probs"]["gold"]) == 10 and len(r["history"]) == 6
     assert torch.isfinite(torch.tensor(r["probs"]["gold"])).all()
+    # версія 1.1: ваги пулу в навчанні й валідації, без балансування класів
+    w_tr, w_va = rng.uniform(0.05, 5.0, len(ytr)), rng.uniform(0.05, 5.0, len(yva))
+    r2 = xlmr.fine_tune(xtr, ytr, xva, yva, {"gold": xte}, seed=0, epochs=6, lr=1e-3, batch_size=16, max_len=32, tokenizer=Tok(),
+                        model_factory=factory, device="cpu", log=lambda *_: None, w_train=w_tr, w_valid=w_va)
+    assert r2["weighted"] and not r["weighted"]
+    assert r2["valid_macro_f1"] > 0.8 and np.isfinite(r2["probs"]["gold"]).all()

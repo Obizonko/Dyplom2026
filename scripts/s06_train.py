@@ -95,6 +95,7 @@ def main(argv=None) -> int:
     ap.add_argument("--limit", type=int, default=0, help="смоук-тест: залишити не більше N рядків train у кожному спліті")
     ap.add_argument("--v11", action="store_true", help="преєстрація 1.1 (розділ 11.1): ваги пулу, валідація за компонентами копій, без балансування класів")
     ap.add_argument("--n-perm", type=int, default=1, help="кількість перестановок міток для контролю (версія 1.1: 20)")
+    ap.add_argument("--xlmr-perm", type=int, default=20, help="версія 1.1: перестановок для XLM-R, по 1 епосі (преєстрація 11.1 п. 6: 20)")
     args = ap.parse_args(argv)
     if args.selftest:
         selftest()
@@ -132,7 +133,7 @@ def main(argv=None) -> int:
               freeze_word_embeddings=not args.unfreeze_embeddings)
     lookup = make_lookup(Path(args.emb_dir)) if "bge_lr" in models else None
     infos = tm.run_all(splits, out, models=models, protocols=protocols, xlmr_protocols=tuple(args.xlmr_protocols.split(",")),
-                       seeds=tuple(range(args.seeds)), controls=not args.no_controls, emb_lookup=lookup, xlmr_kwargs=xk, n_perm=args.n_perm)
+                       seeds=tuple(range(args.seeds)), controls=not args.no_controls, emb_lookup=lookup, xlmr_kwargs=xk, n_perm=args.n_perm, xlmr_perm=args.xlmr_perm)
 
     try:
         import torch

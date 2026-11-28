@@ -15,7 +15,7 @@ import time
 
 import numpy as np
 
-from narr.evaluate import binary_metrics
+from narr.evaluate import binary_metrics, weighted_macro_f1
 
 
 def length_bucket_batches(lengths: np.ndarray, batch_size: int, rng: np.random.Generator, chunk_mult: int = 50) -> list[np.ndarray]:
@@ -95,13 +95,15 @@ def fine_tune(train_texts: list[str], y_train: np.ndarray, valid_texts: list[str
               eval_texts: dict[str, list[str]], *, seed: int, epochs: int = 3, lr: float = 2e-5, batch_size: int = 32,
               max_len: int = 128, warmup_frac: float = 0.06, weight_decay: float = 0.01, model_name: str = "xlm-roberta-base",
               device: str | None = None, fp16: bool = True, tokenizer=None, model_factory=None, log=print,
-              freeze_word_embeddings: bool = True) -> dict:
+              freeze_word_embeddings: bool = True, w_train: np.ndarray | None = None, w_valid: np.ndarray | None = None) -> dict:
     """Дотренування з вибором епохи за валідаційним macro-F1 (слабкі мітки).
 
     Повертає {"valid_macro_f1", "best_epoch", "history", "probs": {назва: ймовірності з найкращої епохи}, ...}.
     `tokenizer` і `model_factory` можна підставити (тести); за замовчуванням завантажується `model_name` з HuggingFace.
     `freeze_word_embeddings`: матриця словникових ембедингів (у XLM-R base ~192 млн з 278 млн параметрів) не навчається.
-    Це потрібно, щоб градієнти й стани Adam вмістилися у 6 ГБ VRAM; решта мережі дотреновується повністю."""
+    Це потрібно, щоб градієнти й стани Adam вмістилися у 6 ГБ VRAM; решта мережі дотреновується повністю.
+    `w_train`, `w_valid` (преєстрація 1.1, розділ 11.1): ваги пулу. Тоді класи не балансуються, втрата в партії це зважене середнє
+    sum(w * CE) / sum(w), а валідаційний macro-F1 зважений. Без ваг поведінка версії 1 (класи збалансовано)."""
     import torch
     from torch.optim.lr_scheduler import LambdaLR
 
@@ -140,7 +142,19 @@ def fine_tune(train_texts: list[str], y_train: np.ndarray, valid_texts: list[str
     total, warm = steps_per_epoch * epochs, int(warmup_frac * steps_per_epoch * epochs)
     sched = LambdaLR(opt, lambda s: lr_factor(s, total, warm))
     scaler = torch.amp.GradScaler("cuda", enabled=amp)
-    loss_fn = torch.nn.CrossEntropyLoss(weight=torch.tensor(class_weights(y_train), dtype=torch.float32, device=dev))
+    weighted = w_train is not None
+    if weighted:
+        w_tr = np.asarray(w_train, dtype=np.float32)
+        ce = torch.nn.CrossEntropyLoss(reduction="none")
+
+        def loss_fn(logits, yb, wb):
+            return (ce(logits, yb) * wb).sum() / wb.sum().clamp_min(1e-12)
+    else:
+        ce = torch.nn.CrossEntropyLoss(weight=torch.tensor(class_weights(y_train), dtype=torch.float32, device=dev))
+
+        def loss_fn(logits, yb, wb):
+            return ce(logits, yb)
+    info["weighted"] = bool(weighted)
     rng = np.random.default_rng(seed)
 
     best = {"valid_macro_f1": -1.0, "best_epoch": -1, "probs": {}}
@@ -155,7 +169,8 @@ def fine_tune(train_texts: list[str], y_train: np.ndarray, valid_texts: list[str
             opt.zero_grad(set_to_none=True)
             with torch.autocast(device_type=dev.type, dtype=torch.float16, enabled=amp):
                 logits = model(input_ids=xb, attention_mask=mb).logits
-            loss = loss_fn(logits.float(), yb)
+            wb = torch.as_tensor(w_tr[b], device=dev) if weighted else None
+            loss = loss_fn(logits.float(), yb, wb)
             if not torch.isfinite(loss):
                 raise FloatingPointError(f"нескінченна втрата на епосі {epoch}")
             scaler.scale(loss).backward()
@@ -166,7 +181,7 @@ def fine_tune(train_texts: list[str], y_train: np.ndarray, valid_texts: list[str
             sched.step()
             losses.append(float(loss.detach()))
         pv = predict_proba(model, ids_va, pad_id, dev, amp=amp)
-        f1 = binary_metrics(y_valid, pv)["macro_f1"]
+        f1 = weighted_macro_f1(y_valid, pv, w_valid)
         history.append({"epoch": epoch, "train_loss": float(np.mean(losses)), "valid_macro_f1": float(f1), "seconds": round(time.time() - t_ep, 1)})
         log(f"  епоха {epoch}: втрата {history[-1]['train_loss']:.4f}, valid macro-F1 {f1:.4f}, {history[-1]['seconds']} с")
         if f1 > best["valid_macro_f1"]:
