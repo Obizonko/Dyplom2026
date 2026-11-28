@@ -1,0 +1,17 @@
+A_as_S6 done 5 s
+B_no_classweight done 6 s
+C_dedup done 2 s
+D_dedup_w_sqrt_channel done 1 s
+E_dedup_w_channel done 4 s
+перемішані мітки, MCC на 412 золотих за 10 перестановками: [-0.058, 0.047, -0.011, -0.061, -0.011, -0.017, -0.025, 0.008, 0.038, 0.114] середнє 0.002
+               variant slice  macro_f1@0.5   mcc  roc_auc  pr_auc  specificity  mean_p  n_train  seconds
+               A_as_S6   all         0.747 0.544    0.869   0.791        0.667   0.538    81532        5
+               A_as_S6    ru         0.665 0.368    0.791   0.890        0.379   0.761    81532        5
+      B_no_classweight   all         0.780 0.578    0.873   0.804        0.750   0.471    81532        6
+      B_no_classweight    ru         0.709 0.424    0.797   0.896        0.517   0.703    81532        6
+               C_dedup   all         0.743 0.537    0.866   0.792        0.659   0.542    44842        2
+               C_dedup    ru         0.655 0.351    0.788   0.889        0.362   0.763    44842        2
+D_dedup_w_sqrt_channel   all         0.817 0.644    0.895   0.851        0.807   0.451    44842        1
+D_dedup_w_sqrt_channel    ru         0.748 0.503    0.820   0.913        0.569   0.721    44842        1
+     E_dedup_w_channel   all         0.802 0.611    0.877   0.826        0.799   0.420    44842        4
+     E_dedup_w_channel    ru         0.704 0.414    0.789   0.900        0.517   0.703    44842        4
