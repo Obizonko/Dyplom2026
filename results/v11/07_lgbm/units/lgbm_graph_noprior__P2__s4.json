@@ -1,0 +1,32 @@
+{
+ "model": "lgbm_graph_noprior",
+ "protocol": "P2",
+ "seed": 4,
+ "valid_macro_f1": 0.8281423731992537,
+ "splits": [
+  {
+   "fold": 0,
+   "n_train": 48388,
+   "n_valid": 5276,
+   "valid_macro_f1": 0.8281423731992537,
+   "params": {
+    "num_leaves": 18,
+    "learning_rate": 0.293563056246612,
+    "min_child_samples": 105,
+    "feature_fraction": 0.6677633040323782,
+    "bagging_fraction": 0.8056275121189687,
+    "lambda_l2": 0.030510715716972996
+   },
+   "best_iteration": 25,
+   "n_trials": 0,
+   "search_rows": 48388,
+   "n_features": 15
+  }
+ ],
+ "seconds": 0.4,
+ "shuffled_labels": false,
+ "rewired_graph": false,
+ "shuffle_seed": null,
+ "fixed_params": true,
+ "rules": "v1.1"
+}

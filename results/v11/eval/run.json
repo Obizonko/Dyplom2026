@@ -1,0 +1,19 @@
+{
+  "script": "scripts/v11_eval.py",
+  "timestamp_utc": "2026-11-28T14:02:53+00:00",
+  "git_commit": "cca21009ef52b6fa59db6634b3eb6a17aa85bd6e",
+  "git_dirty": true,
+  "params": {
+    "n_boot": 1000,
+    "seed": 42,
+    "best_text": "tfidf",
+    "best_hybrid": "lgbm_both",
+    "seconds": 473
+  },
+  "versions": {
+    "python": "3.12.0",
+    "numpy": "2.5.3",
+    "pandas": "3.0.5",
+    "scikit-learn": "1.9.1"
+  }
+}

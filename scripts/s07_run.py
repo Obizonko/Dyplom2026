@@ -62,6 +62,9 @@ def main(argv=None) -> int:
     ap.add_argument("--threads", type=int, default=6)
     ap.add_argument("--no-controls", action="store_true")
     ap.add_argument("--control-trials", type=int, default=5)
+    ap.add_argument("--v11", action="store_true", help="преєстрація 1.1 (11.1): ваги пулу, валідація за компонентами копій, без is_unbalance, "
+                    "Optuna лише на P1 seed 0, решта з параметрами P1, перестановочні контролі")
+    ap.add_argument("--n-perm", type=int, default=20, help="версія 1.1: кількість перестановок міток для контролів")
     args = ap.parse_args(argv)
     out = Path(args.out)
     (out / "units").mkdir(parents=True, exist_ok=True)
@@ -87,24 +90,35 @@ def main(argv=None) -> int:
     for s in splits:
         for part in ("train", "test"):
             s[part]["text_hash"] = s[part]["key"].map(th_map)
+    if args.v11:
+        from narr import weights as wt
+
+        cc, pk, _ = wt.load_v11_inputs(ROOT)
+        pd.DataFrame(wt.attach_weights(splits, pk, cc, th_map)).to_csv(out / "weights_summary.csv", index=False)
+        print("Версія 1.1: ваги пулу і валідація за компонентами копій додано", flush=True)
     by_pr = {pr: [s for s in splits if s["protocol"] == pr] for pr in protocols}
     importance_rows, shap_rows = [], []
 
-    def run_unit(name: str, pr: str, seed: int, n_trials: int, feat: str, shuffle: bool = False, rewired: bool = False):
+    def run_unit(name: str, pr: str, seed: int, n_trials: int, feat: str, shuffle: bool = False, rewired: bool = False, fixed: dict | None = None,
+                 shuffle_seed: int = 1234):
         un = tm.unit_name(name, pr, seed)
         pj, pp = out / "units" / f"{un}.json", out / "predictions" / f"{un}.parquet"
         if pj.exists() and pp.exists():
             print(f"[пропуск] {un}", flush=True)
-            return
+            return json.loads(pj.read_text(encoding="utf-8"))
         print(f"[{time.strftime('%H:%M:%S')}] {un}", flush=True)
         t0 = time.time()
         preds, per = [], []
         for s in by_pr[pr]:
             tr, te = s["train"].reset_index(drop=True), s["test"].reset_index(drop=True)
-            m_tr, m_va = group_valid_split(tr, 0.1, 42)
+            if args.v11:
+                m_va = tr["is_valid"].astype(bool)
+                m_tr = ~m_va
+            else:
+                m_tr, m_va = group_valid_split(tr, 0.1, 42)
             y = tr["weak_narrative"].astype(int).to_numpy()
             if shuffle:
-                y = np.random.default_rng(1234).permutation(y)
+                y = np.random.default_rng(shuffle_seed).permutation(y)
             nt, bs = (net_rw, base_perm) if rewired else (net, base)
             Xg_tr, Xg_te = ft.assemble(tr, bs, nt), ft.assemble(te, bs, nt)
             Xg_tr[ft.PRIOR_COL] = ft.oof_channel_prior(tr)
@@ -125,13 +139,14 @@ def main(argv=None) -> int:
                 for X in (Xtr, Xte):
                     X["net_community"] = X["net_community"].astype("float64")
             a, v = m_tr.to_numpy(), m_va.to_numpy()
+            wkw = dict(wtr=tr["weight"].to_numpy()[a], wva=tr["weight"].to_numpy()[v], balance=False) if args.v11 else {}
             r = hy.tune_and_fit(Xtr[a], y[a], Xtr[v], y[v], Xte, n_trials=n_trials, seed=seed, num_threads=args.threads,
-                                search_rows=args.search_rows or None, categorical=cat, log=print)
+                                search_rows=args.search_rows or None, categorical=cat, log=print, fixed_params=fixed, **wkw)
             preds.append(pd.DataFrame({"protocol": pr, "fold": s["fold"], "model": name, "seed": seed, "channel_id": te["channel_id"].to_numpy(),
                                        "message_id": te["message_id"].to_numpy(), "p": r["p"]}))
             per.append({"fold": s["fold"], "n_train": int(a.sum()), "n_valid": int(v.sum()), "valid_macro_f1": r["valid_macro_f1"], "params": r["params"],
                         "best_iteration": r["best_iteration"], "n_trials": r["n_trials"], "search_rows": r["search_rows"], "n_features": int(Xtr.shape[1])})
-            if name in ("lgbm_graph", "lgbm_graph_noprior", "lgbm_emb", "lgbm_both") and pr == "P1" and not shuffle and not rewired:
+            if name in ("lgbm_graph", "lgbm_graph_noprior", "lgbm_emb", "lgbm_both") and pr == "P1" and seed == 0 and not shuffle and not rewired:
                 imp = pd.Series(r["booster"].feature_importance("gain"), index=Xtr.columns)
                 importance_rows.append(imp.rename(name))
                 import shap
@@ -152,17 +167,35 @@ def main(argv=None) -> int:
                                   "base_value": ev}).to_parquet(out / f"shap_gold_groups_{name}.parquet", index=False)
         pred = pd.concat(preds, ignore_index=True)
         info = {"model": name, "protocol": pr, "seed": seed, "valid_macro_f1": float(np.mean([p["valid_macro_f1"] for p in per])),
-                "splits": per, "seconds": round(time.time() - t0, 1), "shuffled_labels": shuffle, "rewired_graph": rewired}
+                "splits": per, "seconds": round(time.time() - t0, 1), "shuffled_labels": shuffle, "rewired_graph": rewired,
+                "shuffle_seed": shuffle_seed if shuffle else None, "fixed_params": fixed is not None, "rules": "v1.1" if args.v11 else "v1"}
         pred.to_parquet(pp, index=False)
         pj.write_text(json.dumps(info, ensure_ascii=False, indent=1), encoding="utf-8")
         print(f"  готово за {info['seconds']} с, valid macro-F1 {info['valid_macro_f1']:.4f}", flush=True)
+        return info
 
     feat_of = {"lgbm_graph": "graph", "lgbm_graph_noprior": "graph_noprior", "lgbm_emb": "emb", "lgbm_both": "both"}
+    if args.v11:  # Optuna лише на P1 seed 0; P1 seed 1-4, P2, P3 з тими самими параметрами; контролі з параметрами основної моделі
+        assert protocols[0] == "P1", "версія 1.1: P1 має йти першим"
+        best = {}
+        for name in models:
+            best[name] = run_unit(name, "P1", 0, args.n_trials, feat_of[name])["splits"][0]["params"]
+            for pr in protocols:
+                for sd in range(args.seeds):
+                    if (pr, sd) != ("P1", 0):
+                        run_unit(name, pr, sd, 0, feat_of[name], fixed=best[name])
+        if not args.no_controls:
+            for name in [m for m in ("lgbm_graph", "lgbm_both") if m in models]:
+                for k in range(args.n_perm):
+                    run_unit(name + "_shuf", "P1", k, 0, feat_of[name], shuffle=True, fixed=best[name], shuffle_seed=1000 + k)
+            if "lgbm_both" in models:
+                run_unit("lgbm_both_rewired", "P1", 0, 0, "both", rewired=True, fixed=best["lgbm_both"])
+        protocols = ()  # нижче лише версія 1
     for pr in protocols:
         for name in models:
             for sd in range(args.seeds):
                 run_unit(name, pr, sd, args.n_trials, feat_of[name])
-    if not args.no_controls and "P1" in by_pr:
+    if not args.no_controls and "P1" in by_pr and not args.v11:
         if "lgbm_graph" in models:
             run_unit("lgbm_graph_shuf", "P1", 0, args.control_trials, "graph", shuffle=True)
         if "lgbm_both" in models:

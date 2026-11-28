@@ -1,0 +1,27 @@
+{
+ "model": "tfidf_shuf",
+ "protocol": "P1",
+ "seed": 17,
+ "shuffle_seed": 1017,
+ "C": 2.0,
+ "valid_macro_f1": 0.4703514563846467,
+ "splits": [
+  {
+   "fold": 0,
+   "n_train": 73504,
+   "n_valid": 8028,
+   "C": 2.0,
+   "valid_macro_f1": 0.4703514563846467,
+   "grid": [
+    {
+     "C": 2.0,
+     "valid_macro_f1": 0.4703514563846467,
+     "n_iter": 65,
+     "seconds": 19.8
+    }
+   ],
+   "seconds": 144.5
+  }
+ ],
+ "seconds": 144.6
+}

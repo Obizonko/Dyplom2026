@@ -1,0 +1,104 @@
+{
+ "model": "lgbm_graph_noprior",
+ "protocol": "P3",
+ "seed": 4,
+ "valid_macro_f1": 0.8263064156068726,
+ "splits": [
+  {
+   "fold": 1,
+   "n_train": 71679,
+   "n_valid": 7914,
+   "valid_macro_f1": 0.8275584996295163,
+   "params": {
+    "num_leaves": 18,
+    "learning_rate": 0.293563056246612,
+    "min_child_samples": 105,
+    "feature_fraction": 0.6677633040323782,
+    "bagging_fraction": 0.8056275121189687,
+    "lambda_l2": 0.030510715716972996
+   },
+   "best_iteration": 13,
+   "n_trials": 0,
+   "search_rows": 71679,
+   "n_features": 15
+  },
+  {
+   "fold": 2,
+   "n_train": 68125,
+   "n_valid": 7769,
+   "valid_macro_f1": 0.8051752799261886,
+   "params": {
+    "num_leaves": 18,
+    "learning_rate": 0.293563056246612,
+    "min_child_samples": 105,
+    "feature_fraction": 0.6677633040323782,
+    "bagging_fraction": 0.8056275121189687,
+    "lambda_l2": 0.030510715716972996
+   },
+   "best_iteration": 14,
+   "n_trials": 0,
+   "search_rows": 68125,
+   "n_features": 15
+  },
+  {
+   "fold": 3,
+   "n_train": 70765,
+   "n_valid": 7761,
+   "valid_macro_f1": 0.8364719485273742,
+   "params": {
+    "num_leaves": 18,
+    "learning_rate": 0.293563056246612,
+    "min_child_samples": 105,
+    "feature_fraction": 0.6677633040323782,
+    "bagging_fraction": 0.8056275121189687,
+    "lambda_l2": 0.030510715716972996
+   },
+   "best_iteration": 14,
+   "n_trials": 0,
+   "search_rows": 70765,
+   "n_features": 15
+  },
+  {
+   "fold": 4,
+   "n_train": 69854,
+   "n_valid": 7795,
+   "valid_macro_f1": 0.8536594231735435,
+   "params": {
+    "num_leaves": 18,
+    "learning_rate": 0.293563056246612,
+    "min_child_samples": 105,
+    "feature_fraction": 0.6677633040323782,
+    "bagging_fraction": 0.8056275121189687,
+    "lambda_l2": 0.030510715716972996
+   },
+   "best_iteration": 26,
+   "n_trials": 0,
+   "search_rows": 69854,
+   "n_features": 15
+  },
+  {
+   "fold": 5,
+   "n_train": 71239,
+   "n_valid": 7978,
+   "valid_macro_f1": 0.8086669267777404,
+   "params": {
+    "num_leaves": 18,
+    "learning_rate": 0.293563056246612,
+    "min_child_samples": 105,
+    "feature_fraction": 0.6677633040323782,
+    "bagging_fraction": 0.8056275121189687,
+    "lambda_l2": 0.030510715716972996
+   },
+   "best_iteration": 24,
+   "n_trials": 0,
+   "search_rows": 71239,
+   "n_features": 15
+  }
+ ],
+ "seconds": 2.5,
+ "shuffled_labels": false,
+ "rewired_graph": false,
+ "shuffle_seed": null,
+ "fixed_params": true,
+ "rules": "v1.1"
+}

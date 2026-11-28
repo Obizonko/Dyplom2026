@@ -1,0 +1,33 @@
+{
+  "script": "scripts/s07_run.py",
+  "timestamp_utc": "2026-11-28T13:47:03+00:00",
+  "git_commit": "cca21009ef52b6fa59db6634b3eb6a17aa85bd6e",
+  "git_dirty": true,
+  "params": {
+    "args": {
+      "emb_dir": "C:\\Users\\Nazar\\Documents\\Університет-DELL\\Диплом2026\\Dyplom2026\\data\\interim\\embeddings",
+      "splits_dir": "C:\\Users\\Nazar\\Documents\\Університет-DELL\\Диплом2026\\Dyplom2026\\splits",
+      "out": "results/v11/07_lgbm",
+      "edges": "C:\\Users\\Nazar\\Documents\\Університет-DELL\\Диплом2026\\Dyplom2026\\data_small\\channel_flow_edges.csv",
+      "communities": "C:\\Users\\Nazar\\Documents\\Університет-DELL\\Диплом2026\\Dyplom2026\\results\\03_network\\communities.csv",
+      "protocols": "P1,P2,P3",
+      "models": "lgbm_graph,lgbm_graph_noprior,lgbm_emb,lgbm_both",
+      "n_trials": 50,
+      "search_rows": 0,
+      "seeds": 5,
+      "threads": 4,
+      "no_controls": false,
+      "control_trials": 5,
+      "v11": true,
+      "n_perm": 20
+    },
+    "seconds": 4375,
+    "n_channels_in_network": 73
+  },
+  "versions": {
+    "python": "3.12.0",
+    "numpy": "2.5.3",
+    "pandas": "3.0.5",
+    "scikit-learn": "1.9.1"
+  }
+}

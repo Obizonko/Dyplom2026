@@ -18,3 +18,5 @@ results/dev/
 *.npy
 *.pt
 *.safetensors
+reports/progress.html
+reports/progress.json

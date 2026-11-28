@@ -1,0 +1,27 @@
+{
+ "model": "bge_lr_shuf",
+ "protocol": "P1",
+ "seed": 3,
+ "shuffle_seed": 1003,
+ "C": 300.0,
+ "valid_macro_f1": 0.5018272797176617,
+ "splits": [
+  {
+   "fold": 0,
+   "n_train": 73504,
+   "n_valid": 8028,
+   "C": 300.0,
+   "valid_macro_f1": 0.5018272797176617,
+   "grid": [
+    {
+     "C": 300.0,
+     "valid_macro_f1": 0.5018272797176617,
+     "n_iter": 134,
+     "seconds": 8.4
+    }
+   ],
+   "seconds": 9.2
+  }
+ ],
+ "seconds": 9.2
+}

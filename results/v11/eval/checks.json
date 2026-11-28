@@ -1,0 +1,86 @@
+[
+ {
+  "check": "tfidf: macro-F1 P1 (усі 412) вище за мажоритарний",
+  "hard": true,
+  "passed": true,
+  "detail": "0.840 проти 0.391"
+ },
+ {
+  "check": "bge_lr: macro-F1 P1 (усі 412) вище за мажоритарний",
+  "hard": true,
+  "passed": true,
+  "detail": "0.798 проти 0.391"
+ },
+ {
+  "check": "lgbm_emb: macro-F1 P1 (усі 412) вище за мажоритарний",
+  "hard": true,
+  "passed": true,
+  "detail": "0.769 проти 0.391"
+ },
+ {
+  "check": "lgbm_both: macro-F1 P1 (усі 412) вище за мажоритарний",
+  "hard": true,
+  "passed": true,
+  "detail": "0.835 проти 0.391"
+ },
+ {
+  "check": "bge_lr_shuf: перестановочний контроль (20 перестановок)",
+  "hard": true,
+  "passed": true,
+  "detail": "MCC середнє -0.018, квантилі [-0.101; 0.079], середнє |MCC| 0.039"
+ },
+ {
+  "check": "lgbm_both_shuf: перестановочний контроль (20 перестановок)",
+  "hard": true,
+  "passed": true,
+  "detail": "MCC середнє -0.002, квантилі [-0.037; 0.035], середнє |MCC| 0.009"
+ },
+ {
+  "check": "lgbm_graph_shuf: перестановочний контроль (20 перестановок)",
+  "hard": true,
+  "passed": true,
+  "detail": "MCC середнє -0.005, квантилі [-0.078; 0.045], середнє |MCC| 0.014"
+ },
+ {
+  "check": "tfidf_shuf: перестановочний контроль (20 перестановок)",
+  "hard": true,
+  "passed": true,
+  "detail": "MCC середнє 0.004, квантилі [-0.060; 0.085], середнє |MCC| 0.043"
+ },
+ {
+  "check": "lgbm_graph: MCC на всіх 412 не вище 0,8 (поріг витоку)",
+  "hard": true,
+  "passed": true,
+  "detail": "0.686"
+ },
+ {
+  "check": "lgbm_graph_noprior: MCC на всіх 412 не вище 0,8 (поріг витоку)",
+  "hard": true,
+  "passed": true,
+  "detail": "0.684"
+ },
+ {
+  "check": "lgbm_both: розкид macro-F1 між seed (P1) не більше 0,03",
+  "hard": false,
+  "passed": true,
+  "detail": "sd 0.011, seed 5"
+ },
+ {
+  "check": "lgbm_emb: розкид macro-F1 між seed (P1) не більше 0,03",
+  "hard": false,
+  "passed": true,
+  "detail": "sd 0.015, seed 5"
+ },
+ {
+  "check": "lgbm_graph: розкид macro-F1 між seed (P1) не більше 0,03",
+  "hard": false,
+  "passed": true,
+  "detail": "sd 0.001, seed 5"
+ },
+ {
+  "check": "lgbm_graph_noprior: розкид macro-F1 між seed (P1) не більше 0,03",
+  "hard": false,
+  "passed": true,
+  "detail": "sd 0.002, seed 5"
+ }
+]

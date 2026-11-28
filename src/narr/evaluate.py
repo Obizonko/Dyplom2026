@@ -41,6 +41,20 @@ def binary_metrics(y: np.ndarray, p1: np.ndarray, thr: float = 0.5) -> dict:
     }
 
 
+def weighted_macro_f1(y: np.ndarray, p1: np.ndarray, w: np.ndarray | None = None, thr: float = 0.5) -> float:
+    """macro-F1 бінарної задачі з вагами рядків (преєстрація 11.1, валідація на зваженому пулі). Без ваг збігається з binary_metrics."""
+    y = np.asarray(y).astype(int)
+    pred = (np.asarray(p1) >= thr).astype(int)
+    w = np.ones(len(y)) if w is None else np.asarray(w, dtype=float)
+    f1 = []
+    for c in (0, 1):
+        tp = w[(y == c) & (pred == c)].sum()
+        fp = w[(y != c) & (pred == c)].sum()
+        fn = w[(y == c) & (pred != c)].sum()
+        f1.append(2 * tp / (2 * tp + fp + fn) if (2 * tp + fp + fn) > 0 else 0.0)
+    return float(np.mean(f1))
+
+
 def multiclass_metrics(y: np.ndarray, pred: np.ndarray, k: int) -> dict:
     cm = confusion(y, pred, k)
     f1 = f1_per_class(cm)

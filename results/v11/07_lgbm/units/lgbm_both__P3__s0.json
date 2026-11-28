@@ -1,0 +1,104 @@
+{
+ "model": "lgbm_both",
+ "protocol": "P3",
+ "seed": 0,
+ "valid_macro_f1": 0.8934624935600677,
+ "splits": [
+  {
+   "fold": 1,
+   "n_train": 71679,
+   "n_valid": 7914,
+   "valid_macro_f1": 0.8869840211432749,
+   "params": {
+    "num_leaves": 10,
+    "learning_rate": 0.13093093704642086,
+    "min_child_samples": 15,
+    "feature_fraction": 0.47510101267231275,
+    "bagging_fraction": 0.7609241608750359,
+    "lambda_l2": 0.07186075653512951
+   },
+   "best_iteration": 149,
+   "n_trials": 0,
+   "search_rows": 71679,
+   "n_features": 1040
+  },
+  {
+   "fold": 2,
+   "n_train": 68125,
+   "n_valid": 7769,
+   "valid_macro_f1": 0.8862595320959642,
+   "params": {
+    "num_leaves": 10,
+    "learning_rate": 0.13093093704642086,
+    "min_child_samples": 15,
+    "feature_fraction": 0.47510101267231275,
+    "bagging_fraction": 0.7609241608750359,
+    "lambda_l2": 0.07186075653512951
+   },
+   "best_iteration": 132,
+   "n_trials": 0,
+   "search_rows": 68125,
+   "n_features": 1040
+  },
+  {
+   "fold": 3,
+   "n_train": 70765,
+   "n_valid": 7761,
+   "valid_macro_f1": 0.8963909885350088,
+   "params": {
+    "num_leaves": 10,
+    "learning_rate": 0.13093093704642086,
+    "min_child_samples": 15,
+    "feature_fraction": 0.47510101267231275,
+    "bagging_fraction": 0.7609241608750359,
+    "lambda_l2": 0.07186075653512951
+   },
+   "best_iteration": 229,
+   "n_trials": 0,
+   "search_rows": 70765,
+   "n_features": 1040
+  },
+  {
+   "fold": 4,
+   "n_train": 69854,
+   "n_valid": 7795,
+   "valid_macro_f1": 0.9078970911722606,
+   "params": {
+    "num_leaves": 10,
+    "learning_rate": 0.13093093704642086,
+    "min_child_samples": 15,
+    "feature_fraction": 0.47510101267231275,
+    "bagging_fraction": 0.7609241608750359,
+    "lambda_l2": 0.07186075653512951
+   },
+   "best_iteration": 279,
+   "n_trials": 0,
+   "search_rows": 69854,
+   "n_features": 1040
+  },
+  {
+   "fold": 5,
+   "n_train": 71239,
+   "n_valid": 7978,
+   "valid_macro_f1": 0.8897808348538301,
+   "params": {
+    "num_leaves": 10,
+    "learning_rate": 0.13093093704642086,
+    "min_child_samples": 15,
+    "feature_fraction": 0.47510101267231275,
+    "bagging_fraction": 0.7609241608750359,
+    "lambda_l2": 0.07186075653512951
+   },
+   "best_iteration": 208,
+   "n_trials": 0,
+   "search_rows": 71239,
+   "n_features": 1040
+  }
+ ],
+ "seconds": 134.6,
+ "shuffled_labels": false,
+ "rewired_graph": false,
+ "shuffle_seed": null,
+ "fixed_params": true,
+ "rules": "v1.1"
+}

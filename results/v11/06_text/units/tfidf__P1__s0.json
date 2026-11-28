@@ -1,0 +1,39 @@
+{
+ "model": "tfidf",
+ "protocol": "P1",
+ "seed": 0,
+ "shuffle_seed": null,
+ "C": 2.0,
+ "valid_macro_f1": 0.886106949720831,
+ "splits": [
+  {
+   "fold": 0,
+   "n_train": 73504,
+   "n_valid": 8028,
+   "C": 2.0,
+   "valid_macro_f1": 0.886106949720831,
+   "grid": [
+    {
+     "C": 2.0,
+     "valid_macro_f1": 0.886106949720831,
+     "n_iter": 19,
+     "seconds": 9.0
+    },
+    {
+     "C": 8.0,
+     "valid_macro_f1": 0.8823117568644112,
+     "n_iter": 27,
+     "seconds": 13.3
+    },
+    {
+     "C": 32.0,
+     "valid_macro_f1": 0.8763959730788551,
+     "n_iter": 27,
+     "seconds": 11.6
+    }
+   ],
+   "seconds": 159.5
+  }
+ ],
+ "seconds": 159.6
+}

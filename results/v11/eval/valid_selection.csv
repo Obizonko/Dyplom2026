@@ -1,0 +1,7 @@
+model,valid_macro_f1,role
+bge_lr,0.8616476692734415,
+lgbm_both,0.8934845877307815,best_hybrid
+lgbm_emb,0.8725144725063831,
+lgbm_graph,0.8423830384459571,
+lgbm_graph_noprior,0.8355385687299224,
+tfidf,0.886106949720831,best_text

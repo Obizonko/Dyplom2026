@@ -95,7 +95,7 @@ def semantic_copy_features(emb: np.ndarray, channel_id: np.ndarray, date: pd.Ser
 
 def oof_channel_prior(train: pd.DataFrame, n_folds: int = 5, seed: int = 42, alpha: float = 1.0) -> np.ndarray:
     """Канальний пріор для рядків train з позафолдовим обчисленням (групи за text_hash)."""
-    groups = train["text_hash"].to_numpy()
+    groups = (train["comp"] if "comp" in train.columns else train["text_hash"]).to_numpy()  # версія 1.1: компоненти копій
     uniq = np.unique(groups)
     rng = np.random.default_rng(seed)
     fold_of = dict(zip(uniq.tolist(), rng.integers(0, n_folds, size=len(uniq)).tolist()))

@@ -11,17 +11,21 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from narr.evaluate import binary_metrics
+from narr.evaluate import binary_metrics, weighted_macro_f1
 
 BASE_PARAMS = dict(objective="binary", is_unbalance=True, verbosity=-1, force_col_wise=True, max_bin=63)
 
 
-def _fit(params: dict, Xtr, ytr, Xva, yva, num_threads: int, seed: int, max_rounds: int = 400, categorical=None):
+def _fit(params: dict, Xtr, ytr, Xva, yva, num_threads: int, seed: int, max_rounds: int = 400, categorical=None, wtr=None, wva=None,
+         balance: bool = True):
+    """balance=True: версія 1 (is_unbalance). Версія 1.1 (преєстрація 11.1): balance=False і ваги пулу wtr, wva (рання зупинка за зваженим logloss)."""
     import lightgbm as lgb
 
     p = {**BASE_PARAMS, **params, "num_threads": num_threads, "seed": seed}
-    dtr = lgb.Dataset(Xtr, ytr, categorical_feature=categorical or "auto", free_raw_data=False)
-    dva = lgb.Dataset(Xva, yva, reference=dtr, categorical_feature=categorical or "auto", free_raw_data=False)
+    if not balance:
+        p.pop("is_unbalance", None)
+    dtr = lgb.Dataset(Xtr, ytr, weight=wtr, categorical_feature=categorical or "auto", free_raw_data=False)
+    dva = lgb.Dataset(Xva, yva, weight=wva, reference=dtr, categorical_feature=categorical or "auto", free_raw_data=False)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         return lgb.train(p, dtr, num_boost_round=max_rounds, valid_sets=[dva],
@@ -41,7 +45,8 @@ def _suggest(trial, wide: bool) -> dict:
 
 
 def tune_and_fit(Xtr: pd.DataFrame, ytr: np.ndarray, Xva: pd.DataFrame, yva: np.ndarray, Xte: pd.DataFrame, *, n_trials: int, seed: int,
-                 num_threads: int = 6, search_rows: int | None = None, categorical=None, log=print) -> dict:
+                 num_threads: int = 6, search_rows: int | None = None, categorical=None, log=print, wtr=None, wva=None, balance: bool = True,
+                 fixed_params: dict | None = None) -> dict:
     """Optuna (TPE, seed) на валідації слабких міток; потім найкращі параметри на всьому train. Повертає {"p", "valid_macro_f1", "params", "booster", ...}.
     `search_rows`: у швидкому режимі пошук параметрів іде на підвибірці train (seed), фінальне навчання на всьому train."""
     import optuna
@@ -50,22 +55,27 @@ def tune_and_fit(Xtr: pd.DataFrame, ytr: np.ndarray, Xva: pd.DataFrame, yva: np.
     wide = Xtr.shape[1] > 100
     if search_rows and len(Xtr) > search_rows:
         sub = np.random.default_rng(seed).choice(len(Xtr), size=search_rows, replace=False)
-        Xs, ys = Xtr.iloc[sub], ytr[sub]
+        Xs, ys, ws = Xtr.iloc[sub], ytr[sub], (None if wtr is None else np.asarray(wtr)[sub])
     else:
-        Xs, ys = Xtr, ytr
+        Xs, ys, ws = Xtr, ytr, wtr
     t0 = time.time()
+    kw = dict(categorical=categorical, wva=wva, balance=balance)
 
-    def objective(trial):
-        params = _suggest(trial, wide)
-        b = _fit(params, Xs, ys, Xva, yva, num_threads, seed, categorical=categorical)
-        return binary_metrics(yva, b.predict(Xva, num_iteration=b.best_iteration))["macro_f1"]
+    if fixed_params is None:
+        def objective(trial):
+            params = _suggest(trial, wide)
+            b = _fit(params, Xs, ys, Xva, yva, num_threads, seed, wtr=ws, **kw)
+            return weighted_macro_f1(yva, b.predict(Xva, num_iteration=b.best_iteration), wva)
 
-    study = optuna.create_study(direction="maximize", sampler=optuna.samplers.TPESampler(seed=seed))
-    study.optimize(objective, n_trials=n_trials)
-    best = _fit({**study.best_params, "bagging_freq": 1}, Xtr, ytr, Xva, yva, num_threads, seed, categorical=categorical)
+        study = optuna.create_study(direction="maximize", sampler=optuna.samplers.TPESampler(seed=seed))
+        study.optimize(objective, n_trials=n_trials)
+        params, best_search = study.best_params, float(study.best_value)
+    else:  # версія 1.1: параметри P1 для P2, P3 і для seed 1-4
+        params, best_search, n_trials = dict(fixed_params), float("nan"), 0
+    best = _fit({**params, "bagging_freq": 1}, Xtr, ytr, Xva, yva, num_threads, seed, wtr=wtr, **kw)
     pva = best.predict(Xva, num_iteration=best.best_iteration)
-    f1 = binary_metrics(yva, pva)["macro_f1"]
-    log(f"    Optuna {n_trials} спроб за {time.time() - t0:.0f} с, найкращий valid macro-F1 пошуку {study.best_value:.4f}, "
-        f"на повному train {f1:.4f}, ітерацій {best.best_iteration}")
-    return {"p": best.predict(Xte, num_iteration=best.best_iteration), "valid_macro_f1": float(f1), "params": study.best_params,
+    f1 = weighted_macro_f1(yva, pva, wva)
+    log(f"    {'Optuna ' + str(n_trials) + ' спроб' if fixed_params is None else 'фіксовані параметри'} за {time.time() - t0:.0f} с, "
+        f"найкращий valid macro-F1 пошуку {best_search:.4f}, на повному train {f1:.4f}, ітерацій {best.best_iteration}")
+    return {"p": best.predict(Xte, num_iteration=best.best_iteration), "valid_macro_f1": float(f1), "params": params,
             "n_trials": int(n_trials), "best_iteration": int(best.best_iteration), "booster": best, "search_rows": int(len(Xs))}

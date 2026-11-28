@@ -93,6 +93,8 @@ def main(argv=None) -> int:
     ap.add_argument("--unfreeze-embeddings", action="store_true", help="XLM-R: навчати й словникові ембединги (на 6 ГБ VRAM не вміщається)")
     ap.add_argument("--no-controls", action="store_true")
     ap.add_argument("--limit", type=int, default=0, help="смоук-тест: залишити не більше N рядків train у кожному спліті")
+    ap.add_argument("--v11", action="store_true", help="преєстрація 1.1 (розділ 11.1): ваги пулу, валідація за компонентами копій, без балансування класів")
+    ap.add_argument("--n-perm", type=int, default=1, help="кількість перестановок міток для контролю (версія 1.1: 20)")
     args = ap.parse_args(argv)
     if args.selftest:
         selftest()
@@ -118,11 +120,19 @@ def main(argv=None) -> int:
         if args.limit:
             s["train"] = s["train"].sample(n=min(args.limit, len(s["train"])), random_state=42).reset_index(drop=True)
 
+    if args.v11:
+        from narr import weights as wt
+        from narr.io import ROOT
+
+        cc, pk, th = wt.load_v11_inputs(ROOT)
+        wsum = wt.attach_weights(splits, pk, cc, th)
+        pd.DataFrame(wsum).to_csv(out / "weights_summary.csv", index=False)
+        print("Версія 1.1: ваги пулу і валідація за компонентами копій додано", flush=True)
     xk = dict(epochs=args.epochs, max_len=args.max_len, batch_size=args.batch_size, lr=args.lr, model_name=args.model_name,
               freeze_word_embeddings=not args.unfreeze_embeddings)
     lookup = make_lookup(Path(args.emb_dir)) if "bge_lr" in models else None
     infos = tm.run_all(splits, out, models=models, protocols=protocols, xlmr_protocols=tuple(args.xlmr_protocols.split(",")),
-                       seeds=tuple(range(args.seeds)), controls=not args.no_controls, emb_lookup=lookup, xlmr_kwargs=xk)
+                       seeds=tuple(range(args.seeds)), controls=not args.no_controls, emb_lookup=lookup, xlmr_kwargs=xk, n_perm=args.n_perm)
 
     try:
         import torch
